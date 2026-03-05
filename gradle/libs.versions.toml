@@ -1,0 +1,15 @@
+[versions]
+catalogUpdater = "1.0.1"
+jetbrainsAnnotations = "26.0.2-1"
+junitBom = "6.0.0"
+reckon = "1.0.1"
+
+[libraries]
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrainsAnnotations" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junitBom" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platformLauncher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[plugins]
+catalogUpdater = { id = "nl.littlerobots.version-catalog-update", version.ref = "catalogUpdater" }
+reckon = { id = "org.ajoberstar.reckon", version.ref = "reckon" }
