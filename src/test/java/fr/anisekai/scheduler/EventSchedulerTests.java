@@ -1,163 +1,30 @@
 package fr.anisekai.scheduler;
 
-import fr.anisekai.scheduler.exceptions.DelayOverlapException;
-import fr.anisekai.scheduler.exceptions.InvalidSchedulingDurationException;
-import fr.anisekai.scheduler.exceptions.NotSchedulableException;
-import fr.anisekai.scheduler.interfaces.ScheduleSpotData;
-import fr.anisekai.scheduler.interfaces.Scheduler;
-import fr.anisekai.scheduler.interfaces.entities.Planifiable;
-import fr.anisekai.scheduler.interfaces.entities.WatchTarget;
-import fr.anisekai.scheduler.plan.SchedulingAction;
-import fr.anisekai.scheduler.plan.SchedulingPlan;
-import org.jetbrains.annotations.NotNull;
+import fr.anisekai.scheduler.event.EventScheduler;
+import fr.anisekai.scheduler.event.TestSpot;
+import fr.anisekai.scheduler.event.TestWatchParty;
+import fr.anisekai.scheduler.event.TestWatchTarget;
+import fr.anisekai.scheduler.event.exceptions.DelayOverlapException;
+import fr.anisekai.scheduler.event.exceptions.InvalidSchedulingDurationException;
+import fr.anisekai.scheduler.event.exceptions.NotSchedulableException;
+import fr.anisekai.scheduler.event.interfaces.ScheduleSpotData;
+import fr.anisekai.scheduler.event.interfaces.Scheduler;
 import org.junit.jupiter.api.*;
 
-import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static fr.anisekai.scheduler.ActionPlanAssertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("EventScheduler")
 @Tags({@Tag("unit-test"), @Tag("event-scheduler")})
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class EventSchedulerTests {
-
-    //region Test Data
-    static class TestWatchTarget implements WatchTarget {
-
-        private int watched;
-        private int total;
-        private int episodeDuration;
-
-        public TestWatchTarget(int watched, int total, int episodeDuration) {
-
-            this.watched         = watched;
-            this.total           = total;
-            this.episodeDuration = episodeDuration;
-        }
-
-        @Override
-        public int getWatched() {return this.watched;}
-
-        @Override
-        public void setWatched(int watched) {this.watched = watched;}
-
-        @Override
-        public int getTotal() {return this.total;}
-
-        @Override
-        public void setTotal(int total) {this.total = total;}
-
-        @Override
-        public int getEpisodeDuration() {return this.episodeDuration;}
-
-        @Override
-        public void setEpisodeDuration(int episodeDuration) {this.episodeDuration = episodeDuration;}
-
-    }
-
-    static class TestWatchParty implements Planifiable<TestWatchTarget> {
-
-        private static final AtomicInteger   ID_COUNTER = new AtomicInteger(0);
-        private final        Integer         id;
-        private              TestWatchTarget watchTarget;
-        private              Instant         startingAt;
-        private              int             episodeCount;
-        private              int             firstEpisode;
-        private              boolean         skipEnabled;
-
-        public TestWatchParty(TestWatchTarget watchTarget, Instant startingAt, int episodeCount, int firstEpisode) {
-
-            this.id           = ID_COUNTER.incrementAndGet();
-            this.watchTarget  = watchTarget;
-            this.startingAt   = startingAt;
-            this.episodeCount = episodeCount;
-            this.firstEpisode = firstEpisode;
-            this.skipEnabled  = true;
-        }
-
-        public Integer getId() {return this.id;}
-
-        @NotNull
-        @Override
-        public TestWatchTarget getWatchTarget() {return this.watchTarget;}
-
-        @Override
-        public void setWatchTarget(@NotNull TestWatchTarget watchTarget) {this.watchTarget = watchTarget;}
-
-        @NotNull
-        @Override
-        public Instant getStartingAt() {return this.startingAt;}
-
-        @Override
-        public void setStartingAt(@NotNull Instant time) {this.startingAt = time;}
-
-        @Override
-        public int getEpisodeCount() {return this.episodeCount;}
-
-        @Override
-        public void setEpisodeCount(int episodeCount) {this.episodeCount = episodeCount;}
-
-        @Override
-        public boolean isSkipEnabled() {return this.skipEnabled;}
-
-        @Override
-        public void setSkipEnabled(boolean skipEnabled) {this.skipEnabled = skipEnabled;}
-
-        @Override
-        public int getFirstEpisode() {return this.firstEpisode;}
-
-        @Override
-        public void setFirstEpisode(int firstEpisode) {this.firstEpisode = firstEpisode;}
-
-    }
-
-    static class TestSpot implements ScheduleSpotData<TestWatchTarget> {
-
-        private TestWatchTarget watchTarget;
-        private Instant         startingAt;
-        private int             episodeCount;
-
-        public TestSpot(TestWatchTarget watchTarget, Instant startingAt, int episodeCount) {
-
-            this.watchTarget  = watchTarget;
-            this.startingAt   = startingAt;
-            this.episodeCount = episodeCount;
-        }
-
-        @NotNull
-        @Override
-        public TestWatchTarget getWatchTarget() {return this.watchTarget;}
-
-        @Override
-        public void setWatchTarget(@NotNull TestWatchTarget watchTarget) {this.watchTarget = watchTarget;}
-
-        @NotNull
-        @Override
-        public Instant getStartingAt() {return this.startingAt;}
-
-        @Override
-        public void setStartingAt(@NotNull Instant time) {this.startingAt = time;}
-
-        @Override
-        public int getEpisodeCount() {return this.episodeCount;}
-
-        @Override
-        public void setEpisodeCount(int episodeCount) {this.episodeCount = episodeCount;}
-
-        @Override
-        public boolean isSkipEnabled() {return true;}
-
-        @Override
-        public void setSkipEnabled(boolean skipEnabled) {}
-
-    }
 
     static class TestData {
 
@@ -185,7 +52,6 @@ public class EventSchedulerTests {
         }
 
     }
-    //endregion
 
     private Scheduler<TestWatchTarget, TestWatchParty, Integer> scheduler;
     private TestData                                            data;
@@ -197,31 +63,6 @@ public class EventSchedulerTests {
         this.scheduler = new EventScheduler<>(this.data.dataBank(), TestWatchParty::getId);
     }
 
-    private <T extends SchedulingAction, ID extends Serializable> T getSingleAction(SchedulingPlan<ID> plan, Class<T> actionClass) {
-
-        assertEquals(1, plan.getActions().size(), "Expected a single action in the plan.");
-        SchedulingAction action = plan.getActions().getFirst();
-        assertInstanceOf(actionClass, action, "Action is not of the expected type.");
-        return actionClass.cast(action);
-    }
-
-    private <ID extends Serializable> SchedulingAction.CreateAction getCreateAction(SchedulingPlan<ID> plan) {
-
-        return this.getSingleAction(plan, SchedulingAction.CreateAction.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <ID extends Serializable> SchedulingAction.UpdateAction<ID> getUpdateAction(SchedulingPlan<ID> plan) {
-
-        return this.getSingleAction(plan, SchedulingAction.UpdateAction.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <ID extends Serializable> SchedulingAction.DeleteAction<ID> getDeleteAction(SchedulingPlan<ID> plan) {
-
-        return this.getSingleAction(plan, SchedulingAction.DeleteAction.class);
-    }
-
     @Test
     @DisplayName("Scheduler | Single Scheduling - No Conflicts")
     public void testSingleSchedulingNoConflict() {
@@ -231,13 +72,12 @@ public class EventSchedulerTests {
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
 
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(
+        var plan = assertDoesNotThrow(
                 () -> this.scheduler.schedule(spot),
                 "An error occurred while scheduling the event."
         );
 
-        SchedulingAction.CreateAction action = this.getCreateAction(plan);
-        Planifiable<?>                data   = action.data();
+        var data = assertSingleCreateAction(plan).what();
 
         assertEquals(1, data.getFirstEpisode(), "First episode mismatch.");
         assertEquals(1, data.getEpisodeCount(), "Episode count mismatch.");
@@ -262,10 +102,8 @@ public class EventSchedulerTests {
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
 
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
-
-        SchedulingAction.CreateAction action = this.getCreateAction(plan);
-        Planifiable<?>                data   = action.data();
+        var plan = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
+        var data = assertSingleCreateAction(plan).what();
 
         assertEquals(
                 7,
@@ -287,10 +125,10 @@ public class EventSchedulerTests {
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
 
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
+        var plan   = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
+        var update = assertSingleUpdateAction(plan);
 
-        SchedulingAction.UpdateAction<Integer> action = this.getUpdateAction(plan);
-        assertEquals(this.data.partyB2.getId(), action.targetId(), "The plan should target the left party for update.");
+        assertEquals(this.data.partyB2.getId(), update.targetId(), "The plan should target the left party for update.");
 
         TestWatchParty mockParty = new TestWatchParty(
                 this.data.target1,
@@ -298,7 +136,7 @@ public class EventSchedulerTests {
                 this.data.partyB2.getFirstEpisode()
         );
 
-        action.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(3, mockParty.getEpisodeCount(), "Episode count should be merged.");
         assertEquals(
@@ -323,12 +161,12 @@ public class EventSchedulerTests {
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
 
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
+        var plan   = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
+        var update = assertSingleUpdateAction(plan);
 
-        SchedulingAction.UpdateAction<Integer> action = this.getUpdateAction(plan);
         assertEquals(
                 this.data.partyB1.getId(),
-                action.targetId(),
+                update.targetId(),
                 "The plan should target the right party for update."
         );
 
@@ -337,7 +175,8 @@ public class EventSchedulerTests {
                 this.data.partyB1.getStartingAt(), this.data.partyB1.getEpisodeCount(),
                 this.data.partyB1.getFirstEpisode()
         );
-        action.updateHook().accept(mockParty);
+
+        update.hook().accept(mockParty);
 
         assertEquals(3, mockParty.getEpisodeCount(), "Episode count should be merged.");
         assertEquals(3, mockParty.getFirstEpisode(), "First episode should be correct based on previous events.");
@@ -358,35 +197,22 @@ public class EventSchedulerTests {
         this.data.partyB2.setStartingAt(scheduleAt.plus(spot.getDuration()).plus(5, ChronoUnit.MINUTES));
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
+        var plan = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
 
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
-        assertEquals(2, plan.getActions().size(), "Expected one update and one delete action.");
+        assertPlanActions(plan, 0, 1, 1);
 
-        SchedulingAction.UpdateAction<Integer> updateAction = plan
-                .getActions()
-                .stream()
-                .filter(SchedulingAction.UpdateAction.class::isInstance)
-                .map(a -> (SchedulingAction.UpdateAction<Integer>) a)
-                .findFirst()
-                .orElseThrow();
+        var update = plan.updates().getFirst();
+        var delete = plan.deletes().getFirst();
 
-        SchedulingAction.DeleteAction<Integer> deleteAction = plan
-                .getActions()
-                .stream()
-                .filter(SchedulingAction.DeleteAction.class::isInstance)
-                .map(a -> (SchedulingAction.DeleteAction<Integer>) a)
-                .findFirst()
-                .orElseThrow();
+        assertEquals(this.data.partyB1.getId(), update.targetId(), "The update should target the first party.");
+        assertEquals(this.data.partyB2.getId(), delete.targetId(), "The delete should target the second party.");
 
-        assertEquals(this.data.partyB1.getId(), updateAction.targetId(), "The update should target the first party.");
-        assertEquals(this.data.partyB2.getId(), deleteAction.targetId(), "The delete should target the second party.");
-
-        Planifiable<TestWatchTarget> mockParty = new TestWatchParty(
+        TestWatchParty mockParty = new TestWatchParty(
                 this.data.target1,
                 this.data.partyB1.getStartingAt(), this.data.partyB1.getEpisodeCount(),
                 this.data.partyB1.getFirstEpisode()
         );
-        updateAction.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(5, mockParty.getEpisodeCount(), "Episode count should be the sum of all three spots (2 + 1 + 2).");
         assertEquals(
@@ -401,22 +227,24 @@ public class EventSchedulerTests {
     public void testDelayingSuccess() {
 
         Duration delay = Duration.ofHours(1);
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.delay(
+
+        var plan = assertDoesNotThrow(() -> this.scheduler.delay(
                 TestData.BASE_DATETIME,
                 Duration.ofMinutes(60),
                 delay
         ));
 
-        SchedulingAction.UpdateAction<Integer> action = this.getUpdateAction(plan);
-        assertEquals(this.data.partyA1.getId(), action.targetId(), "Wrong item targeted for delay.");
+        var update = assertSingleUpdateAction(plan);
 
-        Planifiable<TestWatchTarget> mockParty = new TestWatchParty(
+        assertEquals(this.data.partyA1.getId(), update.targetId(), "Wrong item targeted for delay.");
+
+        TestWatchParty mockParty = new TestWatchParty(
                 this.data.target1,
                 this.data.partyA1.getStartingAt(),
                 0,
                 0
         );
-        action.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(
                 this.data.partyA1.getStartingAt().plus(delay),
@@ -442,8 +270,8 @@ public class EventSchedulerTests {
     @DisplayName("Scheduler | Calibration - Raw")
     public void testCalibrationUpstreamRaw() {
 
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
-        assertTrue(plan.getActions().isEmpty(), "Plan should be empty when no calibration is needed.");
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        assertEmptyPlan(plan);
     }
 
     @Test
@@ -451,24 +279,13 @@ public class EventSchedulerTests {
     public void testCalibrationUpstreamUpdateOnly() {
 
         this.data.target1.setWatched(1);
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
 
-        assertEquals(3, plan.getActions().size(), "Expected 3 update actions.");
-        assertTrue(
-                plan.getActions().stream().allMatch(SchedulingAction.UpdateAction.class::isInstance),
-                "All actions should be updates."
-        );
+        assertPlanActions(plan, 0, 3, 0);
+        var update = assertSingleUpdateAction(plan, action -> action.targetId().equals(this.data.partyA1.getId()));
 
-        SchedulingAction.UpdateAction<Integer> actionForA1 = plan
-                .getActions()
-                .stream()
-                .map(a -> (SchedulingAction.UpdateAction<Integer>) a)
-                .filter(a -> a.targetId().equals(this.data.partyA1.getId()))
-                .findFirst()
-                .orElseThrow();
-
-        Planifiable<TestWatchTarget> mockParty = new TestWatchParty(null, null, 0, this.data.partyA1.getFirstEpisode());
-        actionForA1.updateHook().accept(mockParty);
+        var mockParty = new TestWatchParty(null, null, 0, this.data.partyA1.getFirstEpisode());
+        update.hook().accept(mockParty);
 
         assertEquals(2, mockParty.getFirstEpisode(), "First episode for partyA1 should be recalibrated to 2.");
     }
@@ -478,13 +295,8 @@ public class EventSchedulerTests {
     public void testCalibrationUpstreamDeleteOnly() {
 
         this.data.target1.setWatched(12);
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
-
-        assertEquals(3, plan.getActions().size(), "Expected 3 delete actions.");
-        assertTrue(
-                plan.getActions().stream().allMatch(SchedulingAction.DeleteAction.class::isInstance),
-                "All actions should be deletes."
-        );
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        assertPlanActions(plan, 0, 0, 3);
     }
 
     @Test
@@ -492,22 +304,13 @@ public class EventSchedulerTests {
     public void testCalibrationUpstreamUpdateDelete() {
 
         this.data.target1.setWatched(8);
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
 
-        assertEquals(3, plan.getActions().size(), "Expected 1 delete and 2 update actions.");
+        assertPlanActions(plan, 0, 2, 1);
 
-        long deleteCount = plan.getActions().stream().filter(SchedulingAction.DeleteAction.class::isInstance).count();
-        long updateCount = plan.getActions().stream().filter(SchedulingAction.UpdateAction.class::isInstance).count();
-        assertEquals(1, deleteCount, "Expected one party to be deleted.");
-        assertEquals(2, updateCount, "Expected two parties to be updated.");
+        var delete = plan.deletes().getFirst();
 
-        SchedulingAction.DeleteAction<Integer> deleteAction = plan
-                .getActions().stream()
-                .filter(SchedulingAction.DeleteAction.class::isInstance)
-                .map(a -> (SchedulingAction.DeleteAction<Integer>) a)
-                .findFirst().orElseThrow();
-
-        assertEquals(this.data.partyB2.getId(), deleteAction.targetId(), "partyB2 should be deleted.");
+        assertEquals(this.data.partyB2.getId(), delete.targetId(), "partyB2 should be deleted.");
     }
 
     @Test
@@ -517,28 +320,17 @@ public class EventSchedulerTests {
         this.data.target1.setWatched(2);
         this.data.target1.setTotal(3);
 
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        assertPlanActions(plan, 0, 1, 2);
 
-        long deleteCount = plan.getActions().stream().filter(SchedulingAction.DeleteAction.class::isInstance).count();
-        long updateCount = plan.getActions().stream().filter(SchedulingAction.UpdateAction.class::isInstance).count();
-
-        assertEquals(2, deleteCount, "partyB1 and partyB2 should be deleted as they are out of bounds.");
-        assertEquals(1, updateCount, "partyA1 should be updated (shrunk).");
-
-        SchedulingAction.UpdateAction<Integer> updateAction = plan
-                .getActions()
-                .stream()
-                .filter(SchedulingAction.UpdateAction.class::isInstance)
-                .findFirst()
-                .map(action -> (SchedulingAction.UpdateAction<Integer>) action)
-                .orElseThrow();
+        var update = plan.updates().getFirst();
 
         TestWatchParty mockParty = new TestWatchParty(
                 this.data.target1,
                 this.data.partyA1.getStartingAt(), this.data.partyA1.getEpisodeCount(),
                 this.data.partyA1.getFirstEpisode()
         );
-        updateAction.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(3, mockParty.getFirstEpisode(), "First episode should be updated to 3.");
         assertEquals(1, mockParty.getEpisodeCount(), "Episode count should be shrunk to 1 to fit total.");
@@ -561,9 +353,8 @@ public class EventSchedulerTests {
         ScheduleSpotData<TestWatchTarget> spot = new TestSpot(this.data.target1, scheduleAt, 1);
 
         assertTrue(this.scheduler.canSchedule(spot), "Should be able to schedule at the exact merge boundary.");
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
-
-        this.getUpdateAction(plan);
+        var plan = this.scheduler.schedule(spot);
+        assertSingleUpdateAction(plan);
     }
 
     @Test
@@ -576,9 +367,8 @@ public class EventSchedulerTests {
         ScheduleSpotData<TestWatchTarget> spot = new TestSpot(this.data.target1, scheduleAt, 1);
 
         assertTrue(this.scheduler.canSchedule(spot), "Should be able to schedule just outside the merge boundary.");
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
-
-        this.getCreateAction(plan);
+        var plan = this.scheduler.schedule(spot);
+        assertSingleCreateAction(plan);
     }
 
     @Test
@@ -588,24 +378,13 @@ public class EventSchedulerTests {
         this.data.target1.setTotal(-12);
         this.data.target1.setWatched(2);
 
-        SchedulingPlan<Integer> plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        var plan = assertDoesNotThrow(() -> this.scheduler.calibrate());
+        assertPlanActions(plan, 0, 3, 0);
 
-        long deleteCount = plan.getActions().stream().filter(SchedulingAction.DeleteAction.class::isInstance).count();
-        long updateCount = plan.getActions().stream().filter(SchedulingAction.UpdateAction.class::isInstance).count();
+        var update    = assertSingleUpdateAction(plan, action -> action.targetId().equals(this.data.partyB2.getId()));
+        var mockParty = new TestWatchParty(null, null, 0, 0);
 
-        assertEquals(0, deleteCount, "No parties should be deleted.");
-        assertEquals(3, updateCount, "All parties should be updated to reflect new watched count.");
-
-        SchedulingAction.UpdateAction<Integer> actionForB2 = plan
-                .getActions()
-                .stream()
-                .map(a -> (SchedulingAction.UpdateAction<Integer>) a)
-                .filter(a -> a.targetId().equals(this.data.partyB2.getId()))
-                .findFirst()
-                .orElseThrow();
-
-        Planifiable<TestWatchTarget> mockParty = new TestWatchParty(null, null, 0, 0);
-        actionForB2.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(7, mockParty.getFirstEpisode(), "partyB2 should start at episode 7 (5+2).");
     }
@@ -627,14 +406,8 @@ public class EventSchedulerTests {
 
         assertTrue(this.scheduler.canSchedule(spot), "The event can't be scheduled.");
 
-        SchedulingPlan<Integer> plan = this.scheduler.schedule(spot);
-
-        SchedulingAction.UpdateAction<Integer> action = this.getUpdateAction(plan);
-        assertEquals(
-                this.data.partyB1.getId(),
-                action.targetId(),
-                "The plan should target the right party for update."
-        );
+        var plan   = assertDoesNotThrow(() -> this.scheduler.schedule(spot));
+        var update = assertSingleUpdateAction(plan, action -> action.targetId().equals(this.data.partyB1.getId()));
 
         TestWatchParty mockParty = new TestWatchParty(
                 this.data.target1,
@@ -642,7 +415,7 @@ public class EventSchedulerTests {
                 this.data.partyB1.getEpisodeCount(),
                 this.data.partyB1.getFirstEpisode()
         );
-        action.updateHook().accept(mockParty);
+        update.hook().accept(mockParty);
 
         assertEquals(3, mockParty.getEpisodeCount(), "Episode count should be merged.");
 

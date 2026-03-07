@@ -1,7 +1,7 @@
-package fr.anisekai.scheduler.interfaces;
+package fr.anisekai.scheduler.event.interfaces;
 
-import fr.anisekai.scheduler.interfaces.entities.Planifiable;
-import fr.anisekai.scheduler.interfaces.entities.WatchTarget;
+import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
+import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;

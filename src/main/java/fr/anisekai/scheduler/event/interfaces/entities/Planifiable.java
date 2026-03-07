@@ -1,6 +1,6 @@
-package fr.anisekai.scheduler.interfaces.entities;
+package fr.anisekai.scheduler.event.interfaces.entities;
 
-import fr.anisekai.scheduler.interfaces.ScheduleSpotData;
+import fr.anisekai.scheduler.event.interfaces.ScheduleSpotData;
 
 /**
  * Represents an object that can be planned into a schedule and is associated with a specific range of episodes to

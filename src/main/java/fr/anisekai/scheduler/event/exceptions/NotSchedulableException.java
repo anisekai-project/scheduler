@@ -1,4 +1,4 @@
-package fr.anisekai.scheduler.exceptions;
+package fr.anisekai.scheduler.event.exceptions;
 
 /**
  * Exception thrown when an event cannot be scheduled due to unavailability.

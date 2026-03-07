@@ -1,8 +1,8 @@
-package fr.anisekai.scheduler.interfaces;
+package fr.anisekai.scheduler.event.interfaces;
 
-import fr.anisekai.scheduler.interfaces.entities.Planifiable;
-import fr.anisekai.scheduler.interfaces.entities.WatchTarget;
-import fr.anisekai.scheduler.plan.SchedulingPlan;
+import fr.anisekai.scheduler.commons.ActionPlan;
+import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
+import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -20,7 +20,7 @@ import java.util.Set;
  * @param <E>
  *         The final entity type being scheduled, extending {@code I}.
  * @param <ID>
- *         The type of the entity's identifier.
+ *         The type of the entity's targetId.
  *
  * @see Planifiable
  * @see ScheduleSpotData
@@ -105,7 +105,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return The scheduling plan containing the necessary operations.
      */
-    SchedulingPlan<ID> schedule(ScheduleSpotData<T> spot);
+    ActionPlan<ID, Planifiable<T>, E> schedule(ScheduleSpotData<T> spot);
 
     /**
      * Generates a plan to delay every {@link Planifiable} being in the specified interval.
@@ -119,7 +119,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return A scheduling plan containing the update operations.
      */
-    SchedulingPlan<ID> delay(Instant from, Duration interval, Duration delay);
+    ActionPlan<ID, Planifiable<T>, E> delay(Instant from, Duration interval, Duration delay);
 
     /**
      * Generates a plan by reprocessing all scheduled entities to ensure consistency. This process may trim or adjust
@@ -127,9 +127,9 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      * <p>
      * Existing events will not be merged.
      *
-     * @return A {@link SchedulingPlan} summarizing the number of updates and deletions to be performed.
+     * @return A {@link ActionPlan} summarizing the number of updates and deletions to be performed.
      */
-    SchedulingPlan<ID> calibrate();
+    ActionPlan<ID, Planifiable<T>, E> calibrate();
 
     // </editor-fold>
 

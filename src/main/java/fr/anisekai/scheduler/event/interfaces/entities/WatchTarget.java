@@ -1,4 +1,4 @@
-package fr.anisekai.scheduler.interfaces.entities;
+package fr.anisekai.scheduler.event.interfaces.entities;
 
 /**
  * Represents a target object that can be watched, such as a show, movie, or any serialized media entity with episodes.

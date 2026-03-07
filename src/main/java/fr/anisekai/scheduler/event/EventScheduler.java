@@ -1,15 +1,15 @@
-package fr.anisekai.scheduler;
+package fr.anisekai.scheduler.event;
 
-import fr.anisekai.scheduler.data.BookedPlanifiable;
-import fr.anisekai.scheduler.exceptions.DelayOverlapException;
-import fr.anisekai.scheduler.exceptions.InvalidSchedulingDurationException;
-import fr.anisekai.scheduler.exceptions.NotSchedulableException;
-import fr.anisekai.scheduler.interfaces.ScheduleSpotData;
-import fr.anisekai.scheduler.interfaces.Scheduler;
-import fr.anisekai.scheduler.interfaces.entities.Planifiable;
-import fr.anisekai.scheduler.interfaces.entities.WatchTarget;
-import fr.anisekai.scheduler.plan.SchedulingAction;
-import fr.anisekai.scheduler.plan.SchedulingPlan;
+import fr.anisekai.scheduler.DateTimeUtils;
+import fr.anisekai.scheduler.commons.ActionPlan;
+import fr.anisekai.scheduler.event.data.BookedPlanifiable;
+import fr.anisekai.scheduler.event.exceptions.DelayOverlapException;
+import fr.anisekai.scheduler.event.exceptions.InvalidSchedulingDurationException;
+import fr.anisekai.scheduler.event.exceptions.NotSchedulableException;
+import fr.anisekai.scheduler.event.interfaces.ScheduleSpotData;
+import fr.anisekai.scheduler.event.interfaces.Scheduler;
+import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
+import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * @param <E>
  *         The entity type. It is the type that will be scheduled.
  * @param <ID>
- *         The type of the entity's identifier.
+ *         The type of the entity's targetId.
  */
 public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID extends Serializable> implements Scheduler<T, E, ID> {
 
@@ -47,7 +47,7 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
      * @param items
      *         Default collection of {@link Planifiable} that will populate the state.
      * @param idExtractor
-     *         A function to extract the identifier from an entity.
+     *         A function to extract the targetId from an entity.
      */
     public EventScheduler(Collection<E> items, Function<E, ID> idExtractor) {
 
@@ -142,13 +142,13 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public SchedulingPlan<ID> schedule(ScheduleSpotData<T> spot) {
+    public ActionPlan<ID, Planifiable<T>, E> schedule(ScheduleSpotData<T> spot) {
 
         if (!this.canSchedule(spot)) {
             throw new NotSchedulableException();
         }
 
-        SchedulingPlan<ID> plan = new SchedulingPlan<>();
+        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
 
         Optional<E> optPrev       = this.findPrevious(spot.getStartingAt());
         Optional<E> optNext       = this.findNext(spot.getStartingAt());
@@ -163,12 +163,9 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
 
             int newCount = prev.getEpisodeCount() + spot.getEpisodeCount() + next.getEpisodeCount();
 
-            plan.addAction(new SchedulingAction.UpdateAction<>(
-                    this.idExtractor.apply(prev),
-                    item -> item.setEpisodeCount(newCount)
-            ));
-            plan.addAction(new SchedulingAction.DeleteAction<>(this.idExtractor.apply(next)));
-            return plan;
+            return plan.update(this.idExtractor.apply(prev), item -> item.setEpisodeCount(newCount))
+                       .delete(this.idExtractor.apply(next))
+                       .build();
         }
 
         if (isPrevCombinable) {
@@ -176,11 +173,7 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
             E   prev     = optPrev.get();
             int newCount = prev.getEpisodeCount() + spot.getEpisodeCount();
 
-            plan.addAction(new SchedulingAction.UpdateAction<>(
-                    this.idExtractor.apply(prev),
-                    item -> item.setEpisodeCount(newCount)
-            ));
-            return plan;
+            return plan.update(this.idExtractor.apply(prev), item -> item.setEpisodeCount(newCount)).build();
         }
 
         if (isNextCombinable) {
@@ -191,15 +184,13 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
                     .map(item -> item.getFirstEpisode() + item.getEpisodeCount())
                     .orElseGet(() -> spot.getWatchTarget().getWatched() + 1);
 
-            plan.addAction(new SchedulingAction.UpdateAction<>(
-                    this.idExtractor.apply(next),
-                    item -> {
+            return plan.update(
+                    this.idExtractor.apply(next), item -> {
                         item.setFirstEpisode(firstEpisode);
                         item.setEpisodeCount(newCount);
                         item.setStartingAt(spot.getStartingAt());
                     }
-            ));
-            return plan;
+            ).build();
         }
 
 
@@ -211,12 +202,11 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
             planifiable = new BookedPlanifiable<>(spot);
         }
 
-        plan.addAction(new SchedulingAction.CreateAction(planifiable));
-        return plan;
+        return plan.create(planifiable).build();
     }
 
     @Override
-    public SchedulingPlan<ID> delay(Instant from, Duration interval, Duration delay) {
+    public ActionPlan<ID, Planifiable<T>, E> delay(Instant from, Duration interval, Duration delay) {
 
         Instant to = from.plus(interval);
 
@@ -240,18 +230,19 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
             throw new DelayOverlapException("One of the event cannot be delayed without conflict.");
         }
 
-        SchedulingPlan<ID> plan = new SchedulingPlan<>();
-        events.forEach(event -> plan.addAction(new SchedulingAction.UpdateAction<>(
+        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
+
+        events.forEach(event -> plan.update(
                 this.idExtractor.apply(event),
                 item -> item.setStartingAt(item.getStartingAt().plus(delay))
-        )));
-        return plan;
+        ));
+        return plan.build();
     }
 
     @Override
-    public SchedulingPlan<ID> calibrate() {
+    public ActionPlan<ID, Planifiable<T>, E> calibrate() {
 
-        SchedulingPlan<ID> plan = new SchedulingPlan<>();
+        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
 
         // Store the max possible episode for each target
         Map<T, Integer> targetMaxEpisode = this
@@ -291,25 +282,26 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
 
             // Don't keep overflowing events
             if (fixedFirstEpisode > maxEpisode) {
-                plan.addAction(new SchedulingAction.DeleteAction<>(this.idExtractor.apply(event)));
+                plan.delete(this.idExtractor.apply(event));
                 continue;
             }
 
             // If we require at least one thing to be updated, start the update
             if (!correctEpisodeCount || !correctFirstEpisode) {
-                plan.addAction(new SchedulingAction.UpdateAction<>(
-                        this.idExtractor.apply(event), item -> {
-                    item.setFirstEpisode(fixedFirstEpisode);
-                    item.setEpisodeCount(fixedEpisodeCount);
-                }
-                ));
+                plan.update(
+                        this.idExtractor.apply(event),
+                        item -> {
+                            item.setFirstEpisode(fixedFirstEpisode);
+                            item.setEpisodeCount(fixedEpisodeCount);
+                        }
+                );
             }
 
             // Keep track of our movement throughout the schedule
             targetProgression.put(event.getWatchTarget(), fixedFirstEpisode + fixedEpisodeCount - 1);
         }
 
-        return plan;
+        return plan.build();
     }
 
     /**

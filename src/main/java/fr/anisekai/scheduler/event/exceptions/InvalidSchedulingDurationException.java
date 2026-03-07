@@ -1,6 +1,6 @@
-package fr.anisekai.scheduler.exceptions;
+package fr.anisekai.scheduler.event.exceptions;
 
-import fr.anisekai.scheduler.interfaces.entities.Planifiable;
+import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
 
 /**
  * Exception thrown when attempting to schedule a {@link Planifiable} with an invalid or non-positive duration.
