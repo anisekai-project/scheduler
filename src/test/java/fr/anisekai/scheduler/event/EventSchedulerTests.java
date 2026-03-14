@@ -1,9 +1,8 @@
-package fr.anisekai.scheduler;
+package fr.anisekai.scheduler.event;
 
-import fr.anisekai.scheduler.event.EventScheduler;
-import fr.anisekai.scheduler.event.TestSpot;
-import fr.anisekai.scheduler.event.TestWatchParty;
-import fr.anisekai.scheduler.event.TestWatchTarget;
+import fr.anisekai.scheduler.event.data.TestSpot;
+import fr.anisekai.scheduler.event.data.TestWatchParty;
+import fr.anisekai.scheduler.event.data.TestWatchTarget;
 import fr.anisekai.scheduler.event.exceptions.DelayOverlapException;
 import fr.anisekai.scheduler.event.exceptions.InvalidSchedulingDurationException;
 import fr.anisekai.scheduler.event.exceptions.NotSchedulableException;

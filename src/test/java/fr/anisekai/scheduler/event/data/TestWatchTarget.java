@@ -1,4 +1,4 @@
-package fr.anisekai.scheduler.event;
+package fr.anisekai.scheduler.event.data;
 
 import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
 

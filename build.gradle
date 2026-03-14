@@ -20,14 +20,30 @@ repositories {
     mavenLocal()
 }
 
+configurations {
+    mockitoAgent
+}
+
 dependencies {
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platformLauncher
+
+    testImplementation libs.bundles.testing.mockito
+
+    mockitoAgent(libs.mockito.core) {
+        transitive = false
+    }
 
     implementation(libs.jetbrains.annotations)
 }
 
 test {
     useJUnitPlatform()
+}
+
+tasks {
+    test {
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    }
 }

@@ -6,7 +6,7 @@ package fr.anisekai.scheduler.event.exceptions;
  * This may happen if no suitable time slot was found or if the requested time is already occupied.
  * </p>
  */
-public class NotSchedulableException extends RuntimeException {
+public class NotSchedulableException extends EventSchedulerException {
 
     /**
      * Create a {@link NotSchedulableException} with a default message indicating that no valid scheduling slot is
