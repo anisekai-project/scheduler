@@ -1,17 +1,21 @@
 package fr.anisekai.scheduler.tasking.interfaces;
 
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
+import fr.anisekai.scheduler.tasking.data.TaskMeta;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 
-public interface TaskClient<E extends Task> {
+/**
+ * Contracts used by a class capable of executing tasks.
+ */
+public interface TaskClient {
 
     /**
      * Retrieve the next task to execute.
      *
      * @return An optional task.
      */
-    Optional<E> poll();
+    Optional<TaskMeta> poll();
 
     /**
      * Check if a task can be executed and execute it if found.
@@ -26,7 +30,9 @@ public interface TaskClient<E extends Task> {
      * @param result
      *         The task results.
      */
-    void onSuccess(E task, String result);
+    default void onSuccess(@NotNull TaskMeta task, @NotNull String result) {
+
+    }
 
     /**
      * Called whenever a task fails during execution.
@@ -36,6 +42,8 @@ public interface TaskClient<E extends Task> {
      * @param throwable
      *         The error that caused the failure.
      */
-    void onFailure(E task, Throwable throwable);
+    default void onFailure(@NotNull TaskMeta task, @NotNull Throwable throwable) {
+
+    }
 
 }

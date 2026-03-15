@@ -1,11 +1,10 @@
 package fr.anisekai.scheduler.tasking.interfaces;
 
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import org.jetbrains.annotations.NotNull;
 
-public interface TaskFactoryAware<E extends Task> {
+public interface TaskFactoryAware {
 
     /**
      * Retrieve a specific factory from this factory aware object.
@@ -18,7 +17,7 @@ public interface TaskFactoryAware<E extends Task> {
      * @throws UnknownFactoryException
      *         if the factory class did not match any registered factories.
      */
-    @NotNull TaskFactory<E, ?, ?> getFactory(@NotNull String name);
+    @NotNull TaskFactory<?, ?> getFactory(@NotNull String name);
 
     /**
      * Retrieve a specific factory from this factory aware object.
@@ -33,6 +32,6 @@ public interface TaskFactoryAware<E extends Task> {
      * @throws UnknownFactoryException
      *         if the factory class did not match any registered factories.
      */
-    <F extends TaskFactory<E, ?, ?>> @NotNull F getFactory(@NotNull Class<F> factory);
+    <F extends TaskFactory<?, ?>> @NotNull F getFactory(@NotNull Class<F> factory);
 
 }

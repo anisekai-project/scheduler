@@ -1,6 +1,7 @@
 package fr.anisekai.scheduler.tasking.interfaces.structure;
 
 import fr.anisekai.scheduler.commons.interfaces.ObjectSerializer;
+import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -8,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Defines how to create, execute, and handle results for a specific task type.
  */
-public interface TaskFactory<T extends Task, I, O> {
+public interface TaskFactory<I, O> {
 
     /**
      * Unique identifier for this type of task.
@@ -30,7 +31,7 @@ public interface TaskFactory<T extends Task, I, O> {
      *
      * @return The raw result of the task.
      */
-    @NotNull String execute(T task) throws Exception;
+    @NotNull String execute(@NotNull TaskMeta task) throws Exception;
 
     /**
      * Generate a task name from the given arguments. Most of the time implementation would keep the task name same as
@@ -41,7 +42,7 @@ public interface TaskFactory<T extends Task, I, O> {
      *
      * @return The task name.
      */
-    @NotNull String getTaskName(I arguments);
+    @NotNull String getTaskName(@NotNull I arguments);
 
     /**
      * Retrieve the {@link ObjectSerializer} instance allowing to manage the input arguments of each task of this
@@ -67,7 +68,9 @@ public interface TaskFactory<T extends Task, I, O> {
      * @param result
      *         The result of the task.
      */
-    void onSuccess(T task, O result);
+    default void onSuccess(@NotNull TaskMeta task, @NotNull O result) {
+
+    }
 
     /**
      * Handle the failure on a task.
@@ -77,7 +80,9 @@ public interface TaskFactory<T extends Task, I, O> {
      * @param error
      *         The reason.
      */
-    void onFailure(T task, String error);
+    default void onFailure(@NotNull TaskMeta task, @NotNull String error) {
+
+    }
 
     /**
      * Check if this factory allows duplicated task names.
@@ -93,6 +98,5 @@ public interface TaskFactory<T extends Task, I, O> {
 
         return false;
     }
-
 
 }

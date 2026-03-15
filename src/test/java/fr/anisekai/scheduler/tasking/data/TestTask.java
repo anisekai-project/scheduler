@@ -4,13 +4,11 @@ import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 
 import java.time.Instant;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 
 public class TestTask implements Task {
 
-    private static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
-
-    private final Integer    id;
+    private final UUID       id;
     private       String     factoryName;
     private       String     name;
     private       TaskStatus status;
@@ -23,10 +21,10 @@ public class TestTask implements Task {
 
     public TestTask() {
 
-        this.id = ID_COUNTER.incrementAndGet();
+        this.id = UUID.randomUUID();
     }
 
-    public Integer getId() {
+    public UUID getId() {
 
         return id;
     }

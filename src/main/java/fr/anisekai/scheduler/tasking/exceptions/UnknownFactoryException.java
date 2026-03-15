@@ -4,7 +4,7 @@ import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 
 public class UnknownFactoryException extends TaskSchedulerException {
 
-    public UnknownFactoryException(Class<? extends TaskFactory<?, ?, ?>> factory) {
+    public UnknownFactoryException(Class<? extends TaskFactory<?, ?>> factory) {
 
         super(String.format(
                 "Unknown factory %s. Perhaps you forgot to call `registerFactory` ?",

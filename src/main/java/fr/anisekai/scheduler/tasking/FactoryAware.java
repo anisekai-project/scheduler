@@ -2,23 +2,22 @@ package fr.anisekai.scheduler.tasking;
 
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
 import fr.anisekai.scheduler.tasking.interfaces.TaskFactoryAware;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
-public class FactoryAware<E extends Task> implements TaskFactoryAware<E> {
+public class FactoryAware implements TaskFactoryAware {
 
-    private final Set<TaskFactory<E, ?, ?>> factories;
+    private final Set<TaskFactory<?, ?>> factories;
 
-    public FactoryAware(Set<TaskFactory<E, ?, ?>> factories) {
+    public FactoryAware(Set<TaskFactory<?, ?>> factories) {
 
         this.factories = factories;
     }
 
     @Override
-    public @NotNull TaskFactory<E, ?, ?> getFactory(@NotNull String name) {
+    public @NotNull TaskFactory<?, ?> getFactory(@NotNull String name) {
 
         return this.factories
                 .stream()
@@ -28,7 +27,7 @@ public class FactoryAware<E extends Task> implements TaskFactoryAware<E> {
     }
 
     @Override
-    public @NotNull <F extends TaskFactory<E, ?, ?>> F getFactory(@NotNull Class<F> factory) {
+    public @NotNull <F extends TaskFactory<?, ?>> F getFactory(@NotNull Class<F> factory) {
 
         return this.factories
                 .stream()

@@ -1,16 +1,16 @@
 package fr.anisekai.scheduler.tasking;
 
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
+import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskExecutor;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractTaskFactory<T extends Task, I, O> implements TaskFactory<T, I, O> {
+public abstract class AbstractTaskFactory<I, O> implements TaskFactory<I, O> {
 
     @Override
-    public @NotNull String execute(T task) throws Exception {
+    public @NotNull String execute(@NotNull TaskMeta task) throws Exception {
 
-        I                  arguments = this.getArgumentsSerializer().deserialize(task.getArguments());
+        I                  arguments = this.getArgumentsSerializer().deserialize(task.arguments());
         TaskExecutor<I, O> executor  = this.getExecutor();
         O                  results;
 

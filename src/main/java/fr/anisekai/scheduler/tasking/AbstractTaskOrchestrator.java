@@ -1,7 +1,8 @@
 package fr.anisekai.scheduler.tasking;
 
 import fr.anisekai.scheduler.commons.ActionPlan;
-import fr.anisekai.scheduler.tasking.data.BookedTask;
+import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
+import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.exceptions.TaskSchedulerException;
 import fr.anisekai.scheduler.tasking.interfaces.TaskOrchestrator;
@@ -13,18 +14,18 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 
-public abstract class AbstractTaskOrchestrator<ID, E extends Task> extends FactoryAware<E> implements TaskOrchestrator<ID, E> {
+public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAware implements TaskOrchestrator<E> {
 
     private final int maxFailures;
 
-    public AbstractTaskOrchestrator(@NotNull Set<TaskFactory<E, ?, ?>> factories, int maxFailures) {
+    public AbstractTaskOrchestrator(@NotNull Set<TaskFactory<?, ?>> factories, int maxFailures) {
 
         super(factories);
         this.maxFailures = maxFailures;
     }
 
     @Override
-    public Optional<E> poll(Collection<TaskFactory<E, ?, ?>> supportedFactories) {
+    public Optional<E> poll(@NotNull Collection<TaskFactory<?, ?>> supportedFactories) {
 
         List<String> supportedFactoryNames = supportedFactories.stream().map(TaskFactory::getName).toList();
 
@@ -36,17 +37,17 @@ public abstract class AbstractTaskOrchestrator<ID, E extends Task> extends Facto
     }
 
     @Override
-    public <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(Class<F> factoryClass, Collection<I> arguments, byte priority) {
+    public <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments, byte priority) {
 
         F factory = this.getFactory(factoryClass);
         return this.queue(factory, arguments, priority);
     }
 
     @Override
-    public <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(F factory, Collection<I> arguments, byte priority) {
+    public <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments, byte priority) {
 
-        List<E>                         existingTasks = this.getTasks();
-        ActionPlan.Builder<ID, Task, E> plan          = new ActionPlan.Builder<>();
+        List<E>                                       existingTasks = this.getTasks();
+        ActionPlan.Builder<UUID, ReservedTaskMeta, E> plan          = new ActionPlan.Builder<>();
 
         for (I argument : arguments) {
             String name = factory.getTaskName(argument);
@@ -61,34 +62,36 @@ public abstract class AbstractTaskOrchestrator<ID, E extends Task> extends Facto
                 if (existing.isPresent()) {
                     E task = existing.get();
                     if (task.getPriority() < priority) {
-                        plan.update(this.extractIdentifier(task), t -> t.setPriority(priority)).build();
+                        plan.update(task.getId(), t -> t.setPriority(priority)).build();
                     }
                     continue;
                 }
             }
 
             String rawArguments = factory.getArgumentsSerializer().serialize(argument);
-            plan.create(new BookedTask(name, factory.getName(), priority, rawArguments));
+            plan.create(new ReservedTaskMeta(factory.getName(), name, rawArguments, priority));
         }
 
         return plan.build();
     }
 
     @Override
-    public <O> ActionPlan<ID, Task, E> resolveSuccess(E task, String data, Consumer<E> updater) {
+    @SuppressWarnings("unchecked")
+    public <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data, @NotNull Consumer<E> updater) {
 
         if (task.getStatus() != TaskStatus.EXECUTING) {
             throw new TaskSchedulerException("Cannot resolve task success: Task is not flagged as executing.");
         }
 
-        TaskFactory<E, ?, O> factory = (TaskFactory<E, ?, O>) this.getFactory(task.getFactoryName());
-        O                    results = factory.getResultSerializer().deserialize(data);
+        TaskFactory<?, O> factory = (TaskFactory<?, O>) this.getFactory(task.getFactoryName());
+        O                 results = factory.getResultSerializer().deserialize(data);
+        TaskMeta          meta    = TaskMeta.of(task);
 
-        factory.onSuccess(task, results);
+        factory.onSuccess(meta, results);
 
-        return new ActionPlan.Builder<ID, Task, E>()
+        return new ActionPlan.Builder<UUID, ReservedTaskMeta, E>()
                 .update(
-                        this.extractIdentifier(task),
+                        task.getId(),
                         item -> {
                             item.setStatus(TaskStatus.SUCCEEDED);
                             item.setCompletedAt(Instant.now());
@@ -98,19 +101,20 @@ public abstract class AbstractTaskOrchestrator<ID, E extends Task> extends Facto
     }
 
     @Override
-    public ActionPlan<ID, Task, E> resolveFailure(E task, String reason, Consumer<E> updater) {
+    public @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason, @NotNull Consumer<E> updater) {
 
         if (task.getStatus() != TaskStatus.EXECUTING) {
             throw new TaskSchedulerException("Cannot resolve task success: Task is not flagged as executing.");
         }
 
-        TaskFactory<E, ?, ?> factory = this.getFactory(task.getFactoryName());
+        TaskFactory<?, ?> factory = this.getFactory(task.getFactoryName());
+        TaskMeta          meta    = TaskMeta.of(task);
 
-        factory.onFailure(task, reason);
+        factory.onFailure(meta, reason);
 
-        return new ActionPlan.Builder<ID, Task, E>()
+        return new ActionPlan.Builder<UUID, ReservedTaskMeta, E>()
                 .update(
-                        this.extractIdentifier(task),
+                        task.getId(),
                         item -> {
                             item.setStartedAt(null);
                             item.setFailureCount((byte) (item.getFailureCount() + 1));

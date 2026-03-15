@@ -3,6 +3,7 @@ package fr.anisekai.scheduler.tasking.interfaces.structure;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public interface Task {
 
@@ -12,6 +13,8 @@ public interface Task {
     byte PRIORITY_AUTOMATIC_HIGH = 3;
     byte PRIORITY_MANUAL_HIGH    = 4;
     byte PRIORITY_URGENT         = 5;
+
+    UUID getId();
 
     String getFactoryName();
 

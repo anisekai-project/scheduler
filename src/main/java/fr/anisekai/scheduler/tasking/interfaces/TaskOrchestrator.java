@@ -1,32 +1,25 @@
 package fr.anisekai.scheduler.tasking.interfaces;
 
 import fr.anisekai.scheduler.commons.ActionPlan;
+import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
 import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
-public interface TaskOrchestrator<ID, E extends Task> {
-
-    /**
-     * Retrieve the identifier of the provided task.
-     *
-     * @param task
-     *         The task from which the identifier should be determined.
-     *
-     * @return An identifier.
-     */
-    ID extractIdentifier(E task);
+public interface TaskOrchestrator<E extends Task> {
 
     /**
      * Retrieve all executable tasks available.
      *
      * @return A list of tasks.
      */
-    List<E> getTasks();
+    @NotNull List<E> getTasks();
 
     /**
      * Try to retrieve an executable task compatible with one of the provided factories.
@@ -36,7 +29,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      *
      * @return A task to execute, if one matched.
      */
-    Optional<E> poll(Collection<TaskFactory<E, ?, ?>> supportedFactories);
+    Optional<E> poll(@NotNull Collection<TaskFactory<?, ?>> supportedFactories);
 
     /**
      * Queue one or more tasks from the provided factory.
@@ -50,7 +43,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      * @param <I>
      *         The argument type.
      */
-    default <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(Class<F> factoryClass, Collection<I> arguments) {
+    default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments) {
 
         return this.queue(factoryClass, arguments, Task.PRIORITY_DEFAULT);
     }
@@ -69,7 +62,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      * @param <I>
      *         The argument type.
      */
-    <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(Class<F> factoryClass, Collection<I> arguments, byte priority);
+    <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments, byte priority);
 
     /**
      * Queue one or more tasks from the provided factory.
@@ -83,7 +76,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      * @param <I>
      *         The argument type.
      */
-    default <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(F factory, Collection<I> arguments) {
+    default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments) {
 
         return this.queue(factory, arguments, Task.PRIORITY_DEFAULT);
     }
@@ -102,7 +95,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      * @param <I>
      *         The argument type.
      */
-    <F extends TaskFactory<E, I, ?>, I> ActionPlan<ID, Task, E> queue(F factory, Collection<I> arguments, byte priority);
+    <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments, byte priority);
 
     /**
      * Notify the provided task factory of the task success, with its raw results.
@@ -114,7 +107,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      *
      * @return An {@link ActionPlan} allowing to update the task.
      */
-    default <O> ActionPlan<ID, Task, E> resolveSuccess(E task, String data) {
+    default <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data) {
 
         return this.resolveSuccess(task, data, _ -> {});
     }
@@ -131,7 +124,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      *
      * @return An {@link ActionPlan} allowing to update the task.
      */
-    <O> ActionPlan<ID, Task, E> resolveSuccess(E task, String data, Consumer<E> updater);
+    <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data, @NotNull Consumer<E> updater);
 
     /**
      * Notify the provided task factory of the task failure, with its error message.
@@ -143,7 +136,7 @@ public interface TaskOrchestrator<ID, E extends Task> {
      *
      * @return An {@link ActionPlan} allowing to update the task.
      */
-    default ActionPlan<ID, Task, E> resolveFailure(E task, String reason) {
+    default @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason) {
 
         return this.resolveFailure(task, reason, _ -> {});
     }
@@ -160,6 +153,6 @@ public interface TaskOrchestrator<ID, E extends Task> {
      *
      * @return An {@link ActionPlan} allowing to update the task.
      */
-    ActionPlan<ID, Task, E> resolveFailure(E task, String reason, Consumer<E> updater);
+    @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason, @NotNull Consumer<E> updater);
 
 }

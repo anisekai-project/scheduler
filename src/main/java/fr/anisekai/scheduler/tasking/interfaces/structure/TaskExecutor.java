@@ -1,5 +1,7 @@
 package fr.anisekai.scheduler.tasking.interfaces.structure;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Functional interface for task logic.
  *
@@ -22,6 +24,6 @@ public interface TaskExecutor<I, O> {
      * @throws Exception
      *         if execution fails.
      */
-    O execute(I arguments) throws Exception;
+    @NotNull O execute(@NotNull I arguments) throws Exception;
 
 }
