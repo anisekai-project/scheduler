@@ -8,6 +8,7 @@ import fr.anisekai.scheduler.commons.actions.UpdateAction;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class ActionPlanAssertions {
 
@@ -54,7 +55,7 @@ public final class ActionPlanAssertions {
 
     public static void assertEmptyPlan(ActionPlan<?, ?, ?> plan) {
 
-        assertPlanActions(plan, 0, 0, 0);
+        assertTrue(plan.isEmpty(), "Plan was expected to be empty");
     }
 
     public static void assertPlanActions(ActionPlan<?, ?, ?> plan, int creates, int updates, int deletes) {

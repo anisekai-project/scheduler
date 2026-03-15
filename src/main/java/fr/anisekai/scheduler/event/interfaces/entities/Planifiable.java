@@ -30,15 +30,4 @@ public interface Planifiable<T extends WatchTarget> extends ScheduleSpotData<T> 
      */
     void setFirstEpisode(int firstEpisode);
 
-    /**
-     * Retrieve the last episode number that will be watched in this {@link Planifiable}. There is no setter counterpart
-     * as this value is processed using {@link #getFirstEpisode()} and {@link #getEpisodeCount()}.
-     *
-     * @return The last episode number.
-     */
-    default int getLastEpisode() {
-
-        return this.getFirstEpisode() + (this.getEpisodeCount() - 1);
-    }
-
 }

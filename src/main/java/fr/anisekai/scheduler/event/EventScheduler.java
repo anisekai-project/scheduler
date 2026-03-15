@@ -2,7 +2,7 @@ package fr.anisekai.scheduler.event;
 
 import fr.anisekai.scheduler.DateTimeUtils;
 import fr.anisekai.scheduler.commons.ActionPlan;
-import fr.anisekai.scheduler.event.data.BookedPlanifiable;
+import fr.anisekai.scheduler.event.data.ReservedSpot;
 import fr.anisekai.scheduler.event.exceptions.DelayOverlapException;
 import fr.anisekai.scheduler.event.exceptions.InvalidSchedulingDurationException;
 import fr.anisekai.scheduler.event.exceptions.NotSchedulableException;
@@ -10,6 +10,7 @@ import fr.anisekai.scheduler.event.interfaces.ScheduleSpotData;
 import fr.anisekai.scheduler.event.interfaces.Scheduler;
 import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
 import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -86,25 +87,25 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public Set<E> getState() {
+    public @NotNull Set<E> getState() {
 
         return Collections.unmodifiableSet(this.state);
     }
 
     @Override
-    public Optional<E> findPrevious(Instant when) {
+    public Optional<E> findPrevious(@NotNull Instant when) {
 
         return this.findPreviousQuery(when).max(Comparator.comparing(Planifiable::getStartingAt));
     }
 
     @Override
-    public Optional<E> findNext(Instant when) {
+    public Optional<E> findNext(@NotNull Instant when) {
 
         return this.findAfterQuery(when).min(Comparator.comparing(Planifiable::getStartingAt));
     }
 
     @Override
-    public Optional<E> findPrevious(Instant when, T target) {
+    public Optional<E> findPrevious(@NotNull Instant when, @NotNull T target) {
 
         return this.findPreviousQuery(when)
                    .filter(item -> item.getWatchTarget().equals(target))
@@ -112,7 +113,7 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public Optional<E> findNext(Instant when, T target) {
+    public Optional<E> findNext(@NotNull Instant when, @NotNull T target) {
 
         return this.findAfterQuery(when)
                    .filter(item -> item.getWatchTarget().equals(target))
@@ -120,7 +121,7 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public boolean canSchedule(ScheduleSpotData<T> spot) {
+    public boolean canSchedule(@NotNull ScheduleSpotData<T> spot) {
 
         Duration duration = spot.getDuration();
 
@@ -142,13 +143,13 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public ActionPlan<ID, Planifiable<T>, E> schedule(ScheduleSpotData<T> spot) {
+    public @NotNull ActionPlan<ID, ReservedSpot<T>, E> schedule(@NotNull ScheduleSpotData<T> spot) {
 
         if (!this.canSchedule(spot)) {
             throw new NotSchedulableException();
         }
 
-        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
+        ActionPlan.Builder<ID, ReservedSpot<T>, E> plan = new ActionPlan.Builder<>();
 
         Optional<E> optPrev       = this.findPrevious(spot.getStartingAt());
         Optional<E> optNext       = this.findNext(spot.getStartingAt());
@@ -194,19 +195,19 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
         }
 
 
-        Planifiable<T> planifiable;
+        ReservedSpot<T> planifiable;
         if (optTargetPrev.isPresent()) {
             E prev = optTargetPrev.get();
-            planifiable = new BookedPlanifiable<>(spot, prev.getFirstEpisode() + prev.getEpisodeCount());
+            planifiable = ReservedSpot.of(spot, prev.getFirstEpisode() + prev.getEpisodeCount());
         } else {
-            planifiable = new BookedPlanifiable<>(spot);
+            planifiable = ReservedSpot.of(spot);
         }
 
         return plan.create(planifiable).build();
     }
 
     @Override
-    public ActionPlan<ID, Planifiable<T>, E> delay(Instant from, Duration interval, Duration delay) {
+    public @NotNull ActionPlan<ID, ReservedSpot<T>, E> delay(@NotNull Instant from, @NotNull Duration interval, @NotNull Duration delay) {
 
         Instant to = from.plus(interval);
 
@@ -222,15 +223,15 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
         // Check if nothing overlaps the temporary state with the delay
         if (events
                 .stream()
-                .map(item -> (Planifiable<T>) new BookedPlanifiable<>(item))
-                .peek(item -> item.setStartingAt(item.getStartingAt().plus(delay)))
+                .map(ReservedSpot::of)
+                .map(item -> item.delayOf(delay))
                 .anyMatch(item -> temporaryState.stream().anyMatch(state -> isOverlapping(item, state)))
         ) {
 
             throw new DelayOverlapException("One of the event cannot be delayed without conflict.");
         }
 
-        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
+        ActionPlan.Builder<ID, ReservedSpot<T>, E> plan = new ActionPlan.Builder<>();
 
         events.forEach(event -> plan.update(
                 this.idExtractor.apply(event),
@@ -240,9 +241,9 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     @Override
-    public ActionPlan<ID, Planifiable<T>, E> calibrate() {
+    public @NotNull ActionPlan<ID, ReservedSpot<T>, E> calibrate() {
 
-        ActionPlan.Builder<ID, Planifiable<T>, E> plan = new ActionPlan.Builder<>();
+        ActionPlan.Builder<ID, ReservedSpot<T>, E> plan = new ActionPlan.Builder<>();
 
         // Store the max possible episode for each target
         Map<T, Integer> targetMaxEpisode = this
@@ -340,6 +341,28 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
 
         Instant startingAt = one.getStartingAt();
         Instant endingAt   = startingAt.plus(one.getDuration());
+
+        Instant itemStartingAt = two.getStartingAt();
+        Instant itemEndingAt   = itemStartingAt.plus(two.getDuration());
+
+        return !startingAt.isAfter(itemEndingAt) && !startingAt.equals(itemEndingAt) && !endingAt.isBefore(
+                itemStartingAt) && !endingAt.equals(itemStartingAt);
+    }
+
+    /**
+     * Check if provided {@link ReservedSpot} and {@link ScheduleSpotData} overlap one another.
+     *
+     * @param one
+     *         The {@link ReservedSpot}
+     * @param two
+     *         The {@link ScheduleSpotData}
+     *
+     * @return True if the items overlaps, false otherwise.
+     */
+    private static <T extends WatchTarget> boolean isOverlapping(ReservedSpot<T> one, ScheduleSpotData<T> two) {
+
+        Instant startingAt = one.startingAt();
+        Instant endingAt   = startingAt.plus(one.duration());
 
         Instant itemStartingAt = two.getStartingAt();
         Instant itemEndingAt   = itemStartingAt.plus(two.getDuration());

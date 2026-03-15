@@ -1,8 +1,10 @@
 package fr.anisekai.scheduler.event.interfaces;
 
 import fr.anisekai.scheduler.commons.ActionPlan;
+import fr.anisekai.scheduler.event.data.ReservedSpot;
 import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
 import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -34,7 +36,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return A state
      */
-    Set<E> getState();
+    @NotNull Set<E> getState();
 
     /**
      * Check in the current state for a {@link Planifiable} starting right before the provided {@link Instant}.
@@ -44,7 +46,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return An optional {@link Planifiable}.
      */
-    Optional<E> findPrevious(Instant when);
+    Optional<E> findPrevious(@NotNull Instant when);
 
     /**
      * Check in the current state for a {@link Planifiable} starting right after the provided {@link Instant}.
@@ -54,7 +56,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return An optional {@link Planifiable}.
      */
-    Optional<E> findNext(Instant when);
+    Optional<E> findNext(@NotNull Instant when);
 
     /**
      * Check in the current state for a {@link Planifiable} starting right before the provided {@link Instant} while
@@ -67,7 +69,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return An optional {@link Planifiable}.
      */
-    Optional<E> findPrevious(Instant when, T target);
+    Optional<E> findPrevious(@NotNull Instant when, @NotNull T target);
 
     /**
      * Check in the current state for a {@link Planifiable} starting right after the provided {@link Instant} while
@@ -80,7 +82,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return An optional {@link Planifiable}.
      */
-    Optional<E> findNext(Instant when, T target);
+    Optional<E> findNext(@NotNull Instant when, @NotNull T target);
 
     /**
      * Check whether the given {@link ScheduleSpotData} can be scheduled without overlapping existing state or violating
@@ -91,7 +93,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return True if the provided {@link ScheduleSpotData} can be scheduled, false otherwise.
      */
-    boolean canSchedule(ScheduleSpotData<T> spot);
+    boolean canSchedule(@NotNull ScheduleSpotData<T> spot);
 
     // </editor-fold>
 
@@ -105,7 +107,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return The scheduling plan containing the necessary operations.
      */
-    ActionPlan<ID, Planifiable<T>, E> schedule(ScheduleSpotData<T> spot);
+    @NotNull ActionPlan<ID, ReservedSpot<T>, E> schedule(@NotNull ScheduleSpotData<T> spot);
 
     /**
      * Generates a plan to delay every {@link Planifiable} being in the specified interval.
@@ -119,7 +121,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return A scheduling plan containing the update operations.
      */
-    ActionPlan<ID, Planifiable<T>, E> delay(Instant from, Duration interval, Duration delay);
+    @NotNull ActionPlan<ID, ReservedSpot<T>, E> delay(@NotNull Instant from, @NotNull Duration interval, @NotNull Duration delay);
 
     /**
      * Generates a plan by reprocessing all scheduled entities to ensure consistency. This process may trim or adjust
@@ -129,7 +131,7 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      *
      * @return A {@link ActionPlan} summarizing the number of updates and deletions to be performed.
      */
-    ActionPlan<ID, Planifiable<T>, E> calibrate();
+    @NotNull ActionPlan<ID, ReservedSpot<T>, E> calibrate();
 
     // </editor-fold>
 
