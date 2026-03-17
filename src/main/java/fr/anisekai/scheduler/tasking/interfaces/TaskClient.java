@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Optional;
 
 /**
- * Contracts used by a class capable of executing tasks.
+ * Contract used by a class capable of executing tasks.
  */
 public interface TaskClient {
 

@@ -12,6 +12,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+/**
+ * Contracts used by a class capable of managing tasks.
+ *
+ * @param <E>
+ *         The type of the task.
+ */
 public interface TaskOrchestrator<E extends Task> {
 
     /**
@@ -42,6 +48,9 @@ public interface TaskOrchestrator<E extends Task> {
      *         The factory type.
      * @param <I>
      *         The argument type.
+     *
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments) {
 
@@ -61,6 +70,9 @@ public interface TaskOrchestrator<E extends Task> {
      *         The factory type.
      * @param <I>
      *         The argument type.
+     *
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments, byte priority);
 
@@ -75,6 +87,9 @@ public interface TaskOrchestrator<E extends Task> {
      *         The factory type.
      * @param <I>
      *         The argument type.
+     *
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments) {
 
@@ -94,6 +109,9 @@ public interface TaskOrchestrator<E extends Task> {
      *         The factory type.
      * @param <I>
      *         The argument type.
+     *
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments, byte priority);
 
@@ -104,8 +122,11 @@ public interface TaskOrchestrator<E extends Task> {
      *         The successful task.
      * @param data
      *         The raw result of the task.
+     * @param <O>
+     *         The output type of the task.
      *
-     * @return An {@link ActionPlan} allowing to update the task.
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     default <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data) {
 
@@ -121,8 +142,11 @@ public interface TaskOrchestrator<E extends Task> {
      *         The raw result of the task.
      * @param updater
      *         Consumer called when the task is being updated, allowing further customization over the task properties.
+     * @param <O>
+     *         The output type of the task.
      *
-     * @return An {@link ActionPlan} allowing to update the task.
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data, @NotNull Consumer<E> updater);
 
@@ -134,7 +158,8 @@ public interface TaskOrchestrator<E extends Task> {
      * @param reason
      *         The error message that caused the failure.
      *
-     * @return An {@link ActionPlan} allowing to update the task.
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     default @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason) {
 
@@ -151,7 +176,8 @@ public interface TaskOrchestrator<E extends Task> {
      * @param updater
      *         Consumer called when the task is being updated, allowing further customization over the task properties.
      *
-     * @return An {@link ActionPlan} allowing to update the task.
+     * @return An {@link ActionPlan} containing all actions required to store the results of this method in a
+     *         persistance layer.
      */
     @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason, @NotNull Consumer<E> updater);
 

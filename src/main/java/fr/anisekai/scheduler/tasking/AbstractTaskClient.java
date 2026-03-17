@@ -7,8 +7,17 @@ import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Minimal implementation of a task client, providing a sane default behavior for the {@link #tick()} method.
+ */
 public abstract class AbstractTaskClient extends FactoryAware implements TaskClient {
 
+    /**
+     * Create a new {@link AbstractTaskClient} instance.
+     *
+     * @param factories
+     *         Set of factories that this client will support.
+     */
     public AbstractTaskClient(Set<TaskFactory<?, ?>> factories) {
 
         super(factories);

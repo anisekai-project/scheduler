@@ -7,10 +7,19 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
+/**
+ * Complete implementation of a {@link TaskFactoryAware} interface.
+ */
 public class FactoryAware implements TaskFactoryAware {
 
     private final Set<TaskFactory<?, ?>> factories;
 
+    /**
+     * Create a new {@link FactoryAware} instance.
+     *
+     * @param factories
+     *         A set of {@link TaskFactory} this {@link FactoryAware} will use.
+     */
     public FactoryAware(Set<TaskFactory<?, ?>> factories) {
 
         this.factories = factories;

@@ -14,10 +14,24 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 
+/**
+ * Minimal implementation of a task orchestrator, providing a default behavior for a general purpose task system.
+ *
+ * @param <E>
+ *         The type of the task.
+ */
 public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAware implements TaskOrchestrator<E> {
 
     private final int maxFailures;
 
+    /**
+     * Create a new {@link AbstractTaskOrchestrator} instance.
+     *
+     * @param factories
+     *         A set of {@link TaskFactory} this orchestrator will use.
+     * @param maxFailures
+     *         Maximum amount of failure allowed for a task before switching to the status {@link TaskStatus#FAILED}.
+     */
     public AbstractTaskOrchestrator(@NotNull Set<TaskFactory<?, ?>> factories, int maxFailures) {
 
         super(factories);

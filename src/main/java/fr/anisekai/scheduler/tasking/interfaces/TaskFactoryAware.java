@@ -4,6 +4,9 @@ import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Contract used by a class capable of referencing a {@link TaskFactory} by its name or class.
+ */
 public interface TaskFactoryAware {
 
     /**
