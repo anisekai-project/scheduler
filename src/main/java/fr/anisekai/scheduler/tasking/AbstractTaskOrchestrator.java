@@ -4,7 +4,7 @@ import fr.anisekai.scheduler.commons.ActionPlan;
 import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
-import fr.anisekai.scheduler.tasking.exceptions.TaskSchedulerException;
+import fr.anisekai.scheduler.tasking.exceptions.NonExecutingTaskException;
 import fr.anisekai.scheduler.tasking.interfaces.TaskOrchestrator;
 import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
@@ -94,7 +94,7 @@ public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAw
     public <O> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveSuccess(@NotNull E task, @NotNull String data, @NotNull Consumer<E> updater) {
 
         if (task.getStatus() != TaskStatus.EXECUTING) {
-            throw new TaskSchedulerException("Cannot resolve task success: Task is not flagged as executing.");
+            throw new NonExecutingTaskException();
         }
 
         TaskFactory<?, O> factory = (TaskFactory<?, O>) this.getFactory(task.getFactoryName());
@@ -118,7 +118,7 @@ public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAw
     public @NotNull ActionPlan<UUID, ReservedTaskMeta, E> resolveFailure(@NotNull E task, @NotNull String reason, @NotNull Consumer<E> updater) {
 
         if (task.getStatus() != TaskStatus.EXECUTING) {
-            throw new TaskSchedulerException("Cannot resolve task success: Task is not flagged as executing.");
+            throw new NonExecutingTaskException();
         }
 
         TaskFactory<?, ?> factory = this.getFactory(task.getFactoryName());
