@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Interface representing the contract of a task.
  */
-public interface Task {
+public interface TaskInterface {
 
     /**
      * The default priority for any task, when not provided.
@@ -138,26 +138,12 @@ public interface Task {
     void setFailureCount(byte failureCount);
 
     /**
-     * Retrieve this task start time.
-     *
-     * @return A start time.
-     */
-    Instant getStartedAt();
-
-    /**
      * Define this task start time.
      *
      * @param startedAt
      *         A start time.
      */
     void setStartedAt(Instant startedAt);
-
-    /**
-     * Retrieve this task completion time.
-     *
-     * @return A completion time.
-     */
-    Instant getCompletedAt();
 
     /**
      * Define this task completion time.
@@ -173,13 +159,5 @@ public interface Task {
      * @return A creation time.
      */
     Instant getCreatedAt();
-
-    /**
-     * Define this task creation time.
-     *
-     * @param createdAt
-     *         A creation time.
-     */
-    void setCreatedAt(Instant createdAt);
 
 }

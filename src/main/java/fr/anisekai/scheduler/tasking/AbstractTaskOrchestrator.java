@@ -6,8 +6,8 @@ import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.exceptions.NonExecutingTaskException;
 import fr.anisekai.scheduler.tasking.interfaces.TaskOrchestrator;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * @param <E>
  *         The type of the task.
  */
-public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAware implements TaskOrchestrator<E> {
+public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends FactoryAware implements TaskOrchestrator<E> {
 
     private final int maxFailures;
 
@@ -47,7 +47,7 @@ public abstract class AbstractTaskOrchestrator<E extends Task> extends FactoryAw
                    .stream()
                    .filter(task -> task.getStatus() == TaskStatus.SCHEDULED)
                    .filter(task -> supportedFactoryNames.contains(task.getFactoryName()))
-                   .min(Comparator.comparing(Task::getCreatedAt));
+                   .min(Comparator.comparing(TaskInterface::getCreatedAt));
     }
 
     @Override

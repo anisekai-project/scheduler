@@ -1,12 +1,12 @@
 package fr.anisekai.scheduler.tasking.data;
 
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public class TestTask implements Task {
+public class TestTask implements TaskInterface {
 
     private final UUID       id;
     private       String     factoryName;
@@ -15,8 +15,6 @@ public class TestTask implements Task {
     private       byte       priority;
     private       String     arguments;
     private       byte       failureCount;
-    private       Instant    startedAt;
-    private       Instant    completedAt;
     private       Instant    createdAt;
 
     public TestTask() {
@@ -102,27 +100,13 @@ public class TestTask implements Task {
     }
 
     @Override
-    public Instant getStartedAt() {
-
-        return startedAt;
-    }
-
-    @Override
     public void setStartedAt(Instant startedAt) {
 
-        this.startedAt = startedAt;
-    }
-
-    @Override
-    public Instant getCompletedAt() {
-
-        return completedAt;
     }
 
     @Override
     public void setCompletedAt(Instant completedAt) {
 
-        this.completedAt = completedAt;
     }
 
     @Override
@@ -131,7 +115,6 @@ public class TestTask implements Task {
         return createdAt;
     }
 
-    @Override
     public void setCreatedAt(Instant createdAt) {
 
         this.createdAt = createdAt;

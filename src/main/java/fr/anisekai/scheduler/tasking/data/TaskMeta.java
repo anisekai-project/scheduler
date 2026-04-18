@@ -1,6 +1,6 @@
 package fr.anisekai.scheduler.tasking.data;
 
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +31,7 @@ public record TaskMeta(
      * @return A {@link TaskMeta} instance.
      */
     @Contract(value = "_ -> new", pure = true)
-    public static @NotNull TaskMeta of(@NotNull Task task) {
+    public static @NotNull TaskMeta of(@NotNull TaskInterface task) {
 
         return new TaskMeta(task.getId(), task.getFactoryName(), task.getArguments());
     }

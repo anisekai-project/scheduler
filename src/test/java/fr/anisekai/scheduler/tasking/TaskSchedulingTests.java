@@ -11,9 +11,9 @@ import fr.anisekai.scheduler.tasking.data.io.TestOutput;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.exceptions.TaskSchedulerException;
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskExecutor;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +104,7 @@ public class TaskSchedulingTests {
 
     public TestTask createTask(TaskFactory<TestInput, TestOutput> factory, TaskStatus status) {
 
-        return this.createTask(factory, status, Task.PRIORITY_DEFAULT);
+        return this.createTask(factory, status, TaskInterface.PRIORITY_DEFAULT);
     }
 
     @Nested
@@ -191,7 +191,7 @@ public class TaskSchedulingTests {
             assertEquals(factoryOne.getName(), what.factoryName());
             assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
-            assertEquals(Task.PRIORITY_DEFAULT, what.priority());
+            assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
 
         @Test
@@ -206,7 +206,7 @@ public class TaskSchedulingTests {
             assertEquals(factoryOne.getName(), what.factoryName());
             assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
-            assertEquals(Task.PRIORITY_DEFAULT, what.priority());
+            assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
 
         @Test
@@ -217,21 +217,21 @@ public class TaskSchedulingTests {
             ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(
                     factoryOne,
                     INPUTS_1,
-                    Task.PRIORITY_URGENT
+                    TaskInterface.PRIORITY_URGENT
             );
 
             UpdateAction<UUID, TestTask> update = assertSingleUpdateAction(plan);
             assertEquals(existing.getId(), update.targetId());
 
             update.hook().accept(existing);
-            assertEquals(Task.PRIORITY_URGENT, existing.getPriority());
+            assertEquals(TaskInterface.PRIORITY_URGENT, existing.getPriority());
         }
 
         @Test
         @DisplayName("Should not update priority on duplicated scheduled task when priority is lower")
         void shouldNotUpdatePriorityOnDuplicatedScheduledTaskWhenPriorityIsLower() {
 
-            createTask(factoryOne, TaskStatus.SCHEDULED, Task.PRIORITY_URGENT);
+            createTask(factoryOne, TaskStatus.SCHEDULED, TaskInterface.PRIORITY_URGENT);
             ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_1);
             assertEmptyPlan(plan);
         }
@@ -248,7 +248,7 @@ public class TaskSchedulingTests {
             assertEquals(factoryOne.getName(), what.factoryName());
             assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
-            assertEquals(Task.PRIORITY_DEFAULT, what.priority());
+            assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
 
         @Test
@@ -263,7 +263,7 @@ public class TaskSchedulingTests {
             assertEquals(factoryOne.getName(), what.factoryName());
             assertEquals(factoryOne.getTaskName(TEST_INPUT_2), what.name());
             assertEquals(TEST_INPUT_2_STR, what.arguments());
-            assertEquals(Task.PRIORITY_DEFAULT, what.priority());
+            assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
 
         @Test
@@ -280,7 +280,7 @@ public class TaskSchedulingTests {
             assertEquals(factoryOne.getName(), what.factoryName());
             assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
-            assertEquals(Task.PRIORITY_DEFAULT, what.priority());
+            assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
 
         @Test

@@ -2,8 +2,8 @@ package fr.anisekai.scheduler.tasking.interfaces;
 
 import fr.anisekai.scheduler.commons.ActionPlan;
 import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
-import fr.anisekai.scheduler.tasking.interfaces.structure.Task;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  * @param <E>
  *         The type of the task.
  */
-public interface TaskOrchestrator<E extends Task> {
+public interface TaskOrchestrator<E extends TaskInterface> {
 
     /**
      * Retrieve all executable tasks available.
@@ -54,7 +54,7 @@ public interface TaskOrchestrator<E extends Task> {
      */
     default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments) {
 
-        return this.queue(factoryClass, arguments, Task.PRIORITY_DEFAULT);
+        return this.queue(factoryClass, arguments, TaskInterface.PRIORITY_DEFAULT);
     }
 
     /**
@@ -93,7 +93,7 @@ public interface TaskOrchestrator<E extends Task> {
      */
     default <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull F factory, @NotNull Collection<I> arguments) {
 
-        return this.queue(factory, arguments, Task.PRIORITY_DEFAULT);
+        return this.queue(factory, arguments, TaskInterface.PRIORITY_DEFAULT);
     }
 
     /**
