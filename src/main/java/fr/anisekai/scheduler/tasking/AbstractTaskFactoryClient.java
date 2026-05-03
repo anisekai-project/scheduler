@@ -2,7 +2,7 @@ package fr.anisekai.scheduler.tasking;
 
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskExecutor;
-import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactoryClient;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,12 +13,12 @@ import org.jetbrains.annotations.NotNull;
  * @param <O>
  *         The output result type
  */
-public abstract class AbstractTaskFactory<I, O> implements TaskFactory<I, O> {
+public abstract class AbstractTaskFactoryClient<I, O> implements TaskFactoryClient<I, O> {
 
     /**
-     * Create a new {@link AbstractTaskFactory} instance.
+     * Create a new {@link AbstractTaskFactoryClient} instance.
      */
-    public AbstractTaskFactory() {
+    public AbstractTaskFactoryClient() {
 
     }
 

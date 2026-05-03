@@ -13,6 +13,7 @@ import fr.anisekai.scheduler.tasking.exceptions.TaskSchedulerException;
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskExecutor;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactoryClient;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
@@ -51,12 +52,12 @@ public class TaskSchedulingTests {
     private static final String TEST_OUTPUT_2_STR = TestOutput.CODEC.serialize(TEST_OUTPUT_2);
 
     // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-    interface FactoryOne extends TaskFactory<TestInput, TestOutput> {
+    interface FactoryOne extends TaskFactoryClient<TestInput, TestOutput> {
 
     }
 
     // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-    interface FactoryTwo extends TaskFactory<TestInput, TestOutput> {
+    interface FactoryTwo extends TaskFactoryClient<TestInput, TestOutput> {
 
     }
 
@@ -78,7 +79,7 @@ public class TaskSchedulingTests {
         this.configureFactory(this.factoryTwo, "two", TEST_OUTPUT_2_STR);
     }
 
-    private void configureFactory(TaskFactory<TestInput, TestOutput> factory, String suffix, String output) throws Exception {
+    private void configureFactory(TaskFactoryClient<TestInput, TestOutput> factory, String suffix, String output) throws Exception {
 
         lenient().when(factory.getName()).thenReturn("test-factory-" + suffix);
         lenient().when(factory.getArgumentsSerializer()).thenReturn(TestInput.CODEC);
@@ -112,18 +113,18 @@ public class TaskSchedulingTests {
     class FactoryAwareTests {
 
         // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-        interface FactoryThree extends TaskFactory<TestInput, TestOutput> {
+        interface FactoryThree extends TaskFactoryClient<TestInput, TestOutput> {
 
         }
 
         @Spy
-        private FactoryThree factoryThree;
-        private FactoryAware factoryAware;
+        private FactoryThree                          factoryThree;
+        private FactoryAware<TaskFactoryClient<?, ?>> factoryAware;
 
         @BeforeEach
         public void setUp() throws Exception {
 
-            this.factoryAware = new FactoryAware(Set.of(factoryOne, factoryTwo));
+            this.factoryAware = new FactoryAware<>(Set.of(factoryOne, factoryTwo));
             configureFactory(factoryThree, "three", "");
         }
 
@@ -195,7 +196,6 @@ public class TaskSchedulingTests {
         }
 
         @Test
-        @SuppressWarnings("unchecked")
         @DisplayName("Should queue new task with factory by class")
         void shouldQueueNewTaskWithFactoryByClass() {
 
@@ -460,12 +460,12 @@ public class TaskSchedulingTests {
     class TaskFactoryTests {
 
         @Mock
-        private AbstractTaskFactory<TestInput, TestOutput> factory;
+        private AbstractTaskFactoryClient<TestInput, TestOutput> factory;
 
         @BeforeEach
         public void setUp() {
 
-            this.factory = spy(new AbstractTaskFactory<TestInput, TestOutput>() {
+            this.factory = spy(new AbstractTaskFactoryClient<TestInput, TestOutput>() {
                 @Override
                 public @NotNull String getName() {
 

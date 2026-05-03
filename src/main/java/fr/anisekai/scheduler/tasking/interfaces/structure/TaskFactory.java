@@ -26,27 +26,6 @@ public interface TaskFactory<I, O> {
     @NotNull String getName();
 
     /**
-     * Retrieve the executor allowing to run a task.
-     *
-     * @return A {@link TaskExecutor}.
-     */
-    @NotNull TaskExecutor<I, O> getExecutor();
-
-    /**
-     * Performs the standard execution flow for the provided task metadata. This involves argument deserialization,
-     * invocation of the {@link TaskExecutor}, and result serialization.
-     *
-     * @param task
-     *         The task to execute.
-     *
-     * @return The raw result of the task.
-     *
-     * @throws Exception
-     *         if the execution of the task failed.
-     */
-    @NotNull String execute(@NotNull TaskMeta task) throws Exception;
-
-    /**
      * Generate a task name from the given arguments. Most of the time, implementation will keep the task name same as
      * the factory name, unless {@link #allowDuplicated()} returns {@code true}, in which case multiple tasks from the
      * same factory might exist at the same time, depending on their input arguments.

@@ -10,9 +10,9 @@ import java.util.Set;
 /**
  * Complete implementation of a {@link TaskFactoryAware} interface.
  */
-public class FactoryAware implements TaskFactoryAware {
+public class FactoryAware<T extends TaskFactory<?, ?>> implements TaskFactoryAware {
 
-    private final Set<TaskFactory<?, ?>> factories;
+    private final Set<T> factories;
 
     /**
      * Create a new {@link FactoryAware} instance.
@@ -20,13 +20,13 @@ public class FactoryAware implements TaskFactoryAware {
      * @param factories
      *         A set of {@link TaskFactory} this {@link FactoryAware} will use.
      */
-    public FactoryAware(Set<TaskFactory<?, ?>> factories) {
+    public FactoryAware(Set<T> factories) {
 
         this.factories = factories;
     }
 
     @Override
-    public @NotNull TaskFactory<?, ?> getFactory(@NotNull String name) {
+    public @NotNull T getFactory(@NotNull String name) {
 
         return this.factories
                 .stream()

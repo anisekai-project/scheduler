@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * @param <E>
  *         The type of the task.
  */
-public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends FactoryAware implements TaskOrchestrator<E> {
+public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends FactoryAware<TaskFactory<?, ?>> implements TaskOrchestrator<E> {
 
     private final int maxFailures;
 
