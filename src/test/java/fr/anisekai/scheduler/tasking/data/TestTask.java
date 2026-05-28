@@ -24,13 +24,13 @@ public class TestTask implements TaskInterface {
 
     public UUID getId() {
 
-        return id;
+        return this.id;
     }
 
     @Override
     public String getFactoryName() {
 
-        return factoryName;
+        return this.factoryName;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class TestTask implements TaskInterface {
     @Override
     public String getName() {
 
-        return name;
+        return this.name;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class TestTask implements TaskInterface {
     @Override
     public TaskStatus getStatus() {
 
-        return status;
+        return this.status;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class TestTask implements TaskInterface {
     @Override
     public byte getPriority() {
 
-        return priority;
+        return this.priority;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class TestTask implements TaskInterface {
     @Override
     public String getArguments() {
 
-        return arguments;
+        return this.arguments;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class TestTask implements TaskInterface {
     @Override
     public byte getFailureCount() {
 
-        return failureCount;
+        return this.failureCount;
     }
 
     @Override
@@ -112,7 +112,7 @@ public class TestTask implements TaskInterface {
     @Override
     public Instant getCreatedAt() {
 
-        return createdAt;
+        return this.createdAt;
     }
 
     public void setCreatedAt(Instant createdAt) {

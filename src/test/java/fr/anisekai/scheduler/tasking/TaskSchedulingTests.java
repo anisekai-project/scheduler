@@ -30,7 +30,6 @@ import java.util.*;
 
 import static fr.anisekai.scheduler.ActionPlanAssertions.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,28 +45,15 @@ public class TaskSchedulingTests {
     private static final Collection<TestInput> INPUTS_1 = Collections.singletonList(TEST_INPUT_1);
     private static final Collection<TestInput> INPUTS_2 = Collections.singletonList(TEST_INPUT_2);
 
-    private static final String TEST_INPUT_1_STR  = TestInput.CODEC.serialize(TEST_INPUT_1);
-    private static final String TEST_INPUT_2_STR  = TestInput.CODEC.serialize(TEST_INPUT_2);
-    private static final String TEST_OUTPUT_1_STR = TestOutput.CODEC.serialize(TEST_OUTPUT_1);
-    private static final String TEST_OUTPUT_2_STR = TestOutput.CODEC.serialize(TEST_OUTPUT_2);
-
-    // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-    interface FactoryOne extends TaskFactoryClient<TestInput, TestOutput> {
-
-    }
-
-    // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-    interface FactoryTwo extends TaskFactoryClient<TestInput, TestOutput> {
-
-    }
-
+    private static final String         TEST_INPUT_1_STR  = TestInput.CODEC.serialize(TEST_INPUT_1);
+    private static final String         TEST_INPUT_2_STR  = TestInput.CODEC.serialize(TEST_INPUT_2);
+    private static final String         TEST_OUTPUT_1_STR = TestOutput.CODEC.serialize(TEST_OUTPUT_1);
+    private static final String         TEST_OUTPUT_2_STR = TestOutput.CODEC.serialize(TEST_OUTPUT_2);
     @Spy
-    private FactoryOne factoryOne;
-
+    private              FactoryOne     factoryOne;
     @Spy
-    private FactoryTwo factoryTwo;
-
-    private List<TestTask> tasks;
+    private              FactoryTwo     factoryTwo;
+    private              List<TestTask> tasks;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -108,14 +94,19 @@ public class TaskSchedulingTests {
         return this.createTask(factory, status, TaskInterface.PRIORITY_DEFAULT);
     }
 
+    // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
+    interface FactoryOne extends TaskFactoryClient<TestInput, TestOutput> {
+
+    }
+
+    // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
+    interface FactoryTwo extends TaskFactoryClient<TestInput, TestOutput> {
+
+    }
+
     @Nested
     @DisplayName("Factory Aware")
     class FactoryAwareTests {
-
-        // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
-        interface FactoryThree extends TaskFactoryClient<TestInput, TestOutput> {
-
-        }
 
         @Spy
         private FactoryThree                          factoryThree;
@@ -124,38 +115,52 @@ public class TaskSchedulingTests {
         @BeforeEach
         public void setUp() throws Exception {
 
-            this.factoryAware = new FactoryAware<>(Set.of(factoryOne, factoryTwo));
-            configureFactory(factoryThree, "three", "");
+            this.factoryAware = new FactoryAware<>(Set.of(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskSchedulingTests.this.factoryTwo
+            ));
+            TaskSchedulingTests.this.configureFactory(this.factoryThree, "three", "");
         }
 
         @Test
         @DisplayName("Should find factory by class")
         void shouldFindFactoryInstanceByClass() {
 
-            FactoryOne resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(factoryOne.getClass()));
-            assertEquals(factoryOne, resolved);
+            FactoryOne resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(TaskSchedulingTests.this.factoryOne.getClass()));
+            assertEquals(TaskSchedulingTests.this.factoryOne, resolved);
         }
 
         @Test
         @DisplayName("Should find factory by name")
         void shouldFindFactoryInstanceByName() {
 
-            TaskFactory<?, ?> resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(factoryOne.getName()));
-            assertEquals(factoryOne, resolved);
+            TaskFactory<?, ?> resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(TaskSchedulingTests.this.factoryOne.getName()));
+            assertEquals(TaskSchedulingTests.this.factoryOne, resolved);
         }
 
         @Test
         @DisplayName("Should not find factory by unregistered class")
         void shouldNoFindFactoryInstanceByUnregisteredClass() {
 
-            assertThrows(UnknownFactoryException.class, () -> this.factoryAware.getFactory(factoryThree.getClass()));
+            assertThrows(
+                    UnknownFactoryException.class,
+                    () -> this.factoryAware.getFactory(this.factoryThree.getClass())
+            );
         }
 
         @Test
         @DisplayName("Should not find factory by unregistered name")
         void shouldNotFindFactoryInstanceByUnregisteredName() {
 
-            assertThrows(UnknownFactoryException.class, () -> this.factoryAware.getFactory(factoryThree.getName()));
+            assertThrows(
+                    UnknownFactoryException.class,
+                    () -> this.factoryAware.getFactory(this.factoryThree.getName())
+            );
+        }
+
+        // Fake interface to ensure .getClass() returns something different; closer to a real-world scenario, too.
+        interface FactoryThree extends TaskFactoryClient<TestInput, TestOutput> {
+
         }
 
     }
@@ -170,13 +175,13 @@ public class TaskSchedulingTests {
         public void setUp() {
 
             this.orchestrator = spy(new AbstractTaskOrchestrator<TestTask>(
-                    Set.of(factoryOne, factoryTwo),
+                    Set.of(TaskSchedulingTests.this.factoryOne, TaskSchedulingTests.this.factoryTwo),
                     TASK_FAILS_AT
             ) {
                 @Override
                 public @NonNull List<TestTask> getTasks() {
 
-                    return tasks;
+                    return TaskSchedulingTests.this.tasks;
                 }
             });
         }
@@ -185,12 +190,15 @@ public class TaskSchedulingTests {
         @DisplayName("Should queue new task")
         void shouldQueueNewTask() {
 
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_1);
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
+                    INPUTS_1
+            );
 
             ReservedTaskMeta what = assertSingleCreateAction(plan).what();
 
-            assertEquals(factoryOne.getName(), what.factoryName());
-            assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getName(), what.factoryName());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
             assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
@@ -199,12 +207,15 @@ public class TaskSchedulingTests {
         @DisplayName("Should queue new task with factory by class")
         void shouldQueueNewTaskWithFactoryByClass() {
 
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne.getClass(), INPUTS_1);
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne.getClass(),
+                    INPUTS_1
+            );
 
             ReservedTaskMeta what = assertSingleCreateAction(plan).what();
 
-            assertEquals(factoryOne.getName(), what.factoryName());
-            assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getName(), what.factoryName());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
             assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
@@ -213,9 +224,12 @@ public class TaskSchedulingTests {
         @DisplayName("Should update priority on duplicated scheduled task")
         void shouldUpdatePriorityOnDuplicatedScheduledTask() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.SCHEDULED);
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(
-                    factoryOne,
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
                     INPUTS_1,
                     TaskInterface.PRIORITY_URGENT
             );
@@ -231,8 +245,15 @@ public class TaskSchedulingTests {
         @DisplayName("Should not update priority on duplicated scheduled task when priority is lower")
         void shouldNotUpdatePriorityOnDuplicatedScheduledTaskWhenPriorityIsLower() {
 
-            createTask(factoryOne, TaskStatus.SCHEDULED, TaskInterface.PRIORITY_URGENT);
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_1);
+            TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED,
+                    TaskInterface.PRIORITY_URGENT
+            );
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
+                    INPUTS_1
+            );
             assertEmptyPlan(plan);
         }
 
@@ -240,13 +261,16 @@ public class TaskSchedulingTests {
         @DisplayName("Should queue on duplicated non-scheduled task")
         void shouldQueueOnDuplicatedNonScheduledTask() {
 
-            createTask(factoryOne, TaskStatus.SUCCEEDED);
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_1);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SUCCEEDED);
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
+                    INPUTS_1
+            );
 
             ReservedTaskMeta what = assertSingleCreateAction(plan).what();
 
-            assertEquals(factoryOne.getName(), what.factoryName());
-            assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getName(), what.factoryName());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
             assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
@@ -255,13 +279,16 @@ public class TaskSchedulingTests {
         @DisplayName("Should queue on non-duplicated task from same factory")
         void shouldQueueOnNonDuplicatedTaskFromSameFactory() {
 
-            createTask(factoryOne, TaskStatus.SCHEDULED);
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_2);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SCHEDULED);
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
+                    INPUTS_2
+            );
 
             ReservedTaskMeta what = assertSingleCreateAction(plan).what();
 
-            assertEquals(factoryOne.getName(), what.factoryName());
-            assertEquals(factoryOne.getTaskName(TEST_INPUT_2), what.name());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getName(), what.factoryName());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getTaskName(TEST_INPUT_2), what.name());
             assertEquals(TEST_INPUT_2_STR, what.arguments());
             assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
@@ -270,15 +297,18 @@ public class TaskSchedulingTests {
         @DisplayName("Should queue on duplicated task when factory allows it")
         void shouldQueueOnDuplicatedTaskWhenFactoryAllowsIt() {
 
-            when(factoryOne.allowDuplicated()).thenReturn(true);
+            when(TaskSchedulingTests.this.factoryOne.allowDuplicated()).thenReturn(true);
 
-            createTask(factoryOne, TaskStatus.SCHEDULED);
-            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(factoryOne, INPUTS_1);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SCHEDULED);
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.queue(
+                    TaskSchedulingTests.this.factoryOne,
+                    INPUTS_1
+            );
 
             ReservedTaskMeta what = assertSingleCreateAction(plan).what();
 
-            assertEquals(factoryOne.getName(), what.factoryName());
-            assertEquals(factoryOne.getTaskName(TEST_INPUT_1), what.name());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getName(), what.factoryName());
+            assertEquals(TaskSchedulingTests.this.factoryOne.getTaskName(TEST_INPUT_1), what.name());
             assertEquals(TEST_INPUT_1_STR, what.arguments());
             assertEquals(TaskInterface.PRIORITY_DEFAULT, what.priority());
         }
@@ -287,7 +317,10 @@ public class TaskSchedulingTests {
         @DisplayName("Flagging as succeeded should fail when task was not flagged as executing")
         void flaggingAsSucceededShouldFailWhenTaskWasNotFlaggedAsExecuting() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.SCHEDULED);
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
             assertThrows(
                     TaskSchedulerException.class,
                     () -> this.orchestrator.resolveSuccess(existing, TEST_OUTPUT_1_STR)
@@ -298,7 +331,10 @@ public class TaskSchedulingTests {
         @DisplayName("Should flag task as succeeded when resolveSucces() is called")
         void flaggingAsSucceededShouldSucceedWhenTaskWasFlaggedAsExecuting() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.EXECUTING);
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.EXECUTING
+            );
 
             ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.resolveSuccess(
                     existing,
@@ -316,7 +352,10 @@ public class TaskSchedulingTests {
         @DisplayName("Flagging as scheduled during failure should succeed when task fail count is below 3")
         void flaggingAsScheduledDuringFailureShouldSucceedWhenTaskFailCountIsBelowThree() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.EXECUTING);
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.EXECUTING
+            );
             ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.resolveFailure(
                     existing,
                     "fail reason"
@@ -333,7 +372,10 @@ public class TaskSchedulingTests {
         @DisplayName("Flagging as failed during failure should succeed when task fail count is 3")
         void flaggingAsFailedDuringFailureShouldSucceedWhenTaskFailCountIsThree() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.EXECUTING);
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.EXECUTING
+            );
             existing.setFailureCount((byte) (TASK_FAILS_AT - 1));
 
             ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = this.orchestrator.resolveFailure(
@@ -352,7 +394,10 @@ public class TaskSchedulingTests {
         @DisplayName("Flagging as failed should fail when task was not flagged as executing")
         void flaggingAsFailedShouldFailWhenTaskWasNotFlaggedAsExecuting() {
 
-            TestTask existing = createTask(factoryOne, TaskStatus.SCHEDULED);
+            TestTask existing = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
             assertThrows(
                     TaskSchedulerException.class,
                     () -> this.orchestrator.resolveFailure(existing, "fail reason")
@@ -363,8 +408,8 @@ public class TaskSchedulingTests {
         @DisplayName("Polling a task should return one when using a factory with tasks")
         void pollingTaskShouldReturnOneWhenUsingFactoryWithTasks() {
 
-            createTask(factoryOne, TaskStatus.SCHEDULED);
-            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(factoryOne));
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SCHEDULED);
+            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(TaskSchedulingTests.this.factoryOne));
             assertTrue(polled.isPresent());
         }
 
@@ -372,12 +417,12 @@ public class TaskSchedulingTests {
         @DisplayName("Polling a task should return nothing when using a factory with non-scheduled tasks")
         void pollingTaskShouldReturnNothingWhenUsingFactoryWithNonScheduledTasks() {
 
-            createTask(factoryOne, TaskStatus.EXECUTING);
-            createTask(factoryOne, TaskStatus.SUCCEEDED);
-            createTask(factoryOne, TaskStatus.FAILED);
-            createTask(factoryOne, TaskStatus.CANCELED);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.EXECUTING);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SUCCEEDED);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.FAILED);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.CANCELED);
 
-            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(factoryOne));
+            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(TaskSchedulingTests.this.factoryOne));
             assertTrue(polled.isEmpty());
         }
 
@@ -385,9 +430,9 @@ public class TaskSchedulingTests {
         @DisplayName("Polling a task should return nothing when using a factory without tasks")
         void pollingTaskShouldReturnNothingWhenUsingFactoryWithoutTasks() {
 
-            createTask(factoryOne, TaskStatus.SCHEDULED);
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SCHEDULED);
 
-            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(factoryTwo));
+            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(TaskSchedulingTests.this.factoryTwo));
             assertTrue(polled.isEmpty());
         }
 
@@ -402,7 +447,10 @@ public class TaskSchedulingTests {
         @BeforeEach
         public void setUp() {
 
-            this.client = spy(new AbstractTaskClient(Set.of(factoryOne, factoryTwo)) {
+            this.client = spy(new AbstractTaskClient(Set.of(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskSchedulingTests.this.factoryTwo
+            )) {
                 @Override
                 public Optional<TaskMeta> poll() {
 
@@ -415,42 +463,48 @@ public class TaskSchedulingTests {
         @DisplayName("Client should successfully execute task when poll returns valid task")
         void clientShouldSuccessfullyExecuteTaskWhenPollReturnsValidTask() {
 
-            TestTask task = createTask(factoryOne, TaskStatus.EXECUTING);
+            TestTask task = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.EXECUTING
+            );
             TaskMeta meta = TaskMeta.of(task);
 
-            lenient().when(client.poll()).thenReturn(Optional.of(meta));
-            client.tick();
+            lenient().when(this.client.poll()).thenReturn(Optional.of(meta));
+            this.client.tick();
 
-            verify(client).onSuccess(eq(meta), any(String.class));
+            verify(this.client).onSuccess(eq(meta), any(String.class));
         }
 
         @Test
         @DisplayName("Client should successfully fail task when poll returns invalid task")
         void clientShouldSuccessfullyFailTaskWhenPollReturnsInvalidTask() throws Exception {
 
-            TestTask task = createTask(factoryOne, TaskStatus.EXECUTING);
+            TestTask task = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.EXECUTING
+            );
             TaskMeta meta = TaskMeta.of(task);
 
             UnsupportedOperationException failure = new UnsupportedOperationException("failure");
-            when(factoryOne.execute(any())).thenThrow(failure);
+            when(TaskSchedulingTests.this.factoryOne.execute(any())).thenThrow(failure);
 
-            lenient().when(client.poll()).thenReturn(Optional.of(meta));
-            client.tick();
+            lenient().when(this.client.poll()).thenReturn(Optional.of(meta));
+            this.client.tick();
 
-            verify(client).onFailure(eq(meta), eq(failure));
+            verify(this.client).onFailure(eq(meta), eq(failure));
         }
 
         @Test
         @DisplayName("Client should do nothing when poll returns nothing")
         void clientShouldDoNothingWhenPollReturnsNothing() throws Exception {
 
-            lenient().when(client.poll()).thenReturn(Optional.empty());
-            client.tick();
+            lenient().when(this.client.poll()).thenReturn(Optional.empty());
+            this.client.tick();
 
-            verify(client, never()).getFactory(any(String.class));
-            verify(factoryOne, never()).execute(any());
-            verify(client, never()).onFailure(any(), any());
-            verify(client, never()).onSuccess(any(), any());
+            verify(this.client, never()).getFactory(any(String.class));
+            verify(TaskSchedulingTests.this.factoryOne, never()).execute(any());
+            verify(this.client, never()).onFailure(any(), any());
+            verify(this.client, never()).onSuccess(any(), any());
         }
 
     }
@@ -469,31 +523,31 @@ public class TaskSchedulingTests {
                 @Override
                 public @NotNull String getName() {
 
-                    return factoryOne.getName();
+                    return TaskSchedulingTests.this.factoryOne.getName();
                 }
 
                 @Override
                 public @NotNull TaskExecutor<TestInput, TestOutput> getExecutor() {
 
-                    return factoryOne.getExecutor();
+                    return TaskSchedulingTests.this.factoryOne.getExecutor();
                 }
 
                 @Override
                 public @NotNull String getTaskName(@NonNull TestInput arguments) {
 
-                    return factoryOne.getTaskName(arguments);
+                    return TaskSchedulingTests.this.factoryOne.getTaskName(arguments);
                 }
 
                 @Override
                 public @NotNull ObjectSerializer<TestInput> getArgumentsSerializer() {
 
-                    return factoryOne.getArgumentsSerializer();
+                    return TaskSchedulingTests.this.factoryOne.getArgumentsSerializer();
                 }
 
                 @Override
                 public @NotNull ObjectSerializer<TestOutput> getResultSerializer() {
 
-                    return factoryOne.getResultSerializer();
+                    return TaskSchedulingTests.this.factoryOne.getResultSerializer();
                 }
             });
         }
@@ -504,7 +558,7 @@ public class TaskSchedulingTests {
         void shouldCallFailureHandlerAndThrowExceptionOnExecutorError() throws Exception {
 
             Throwable error = new UnsupportedOperationException("failure");
-            TestTask  task  = createTask(this.factory, TaskStatus.EXECUTING);
+            TestTask  task  = TaskSchedulingTests.this.createTask(this.factory, TaskStatus.EXECUTING);
             task.setArguments(TEST_INPUT_1_STR);
             TaskMeta meta = TaskMeta.of(task);
 
@@ -527,7 +581,7 @@ public class TaskSchedulingTests {
         @DisplayName("Should call failure handler and throw exception on executor error")
         void shouldClassSuccessHandlerOnExecutorSuccess() throws Exception {
 
-            TestTask task = createTask(this.factory, TaskStatus.EXECUTING);
+            TestTask task = TaskSchedulingTests.this.createTask(this.factory, TaskStatus.EXECUTING);
             task.setArguments(TEST_INPUT_1_STR);
             TaskMeta meta = TaskMeta.of(task);
 
