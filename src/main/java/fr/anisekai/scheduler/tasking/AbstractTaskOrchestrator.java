@@ -22,6 +22,10 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends FactoryAware<TaskFactory<?, ?>> implements TaskOrchestrator<E> {
 
+    private static final Comparator<TaskInterface> POLL_COMPARATOR = Comparator
+            .comparing(TaskInterface::getPriority)
+            .thenComparing(TaskInterface::getCreatedAt, Comparator.reverseOrder());
+
     private final int maxFailures;
 
     /**
@@ -47,7 +51,7 @@ public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends 
                    .stream()
                    .filter(task -> task.getStatus() == TaskStatus.SCHEDULED)
                    .filter(task -> supportedFactoryNames.contains(task.getFactoryName()))
-                   .min(Comparator.comparing(TaskInterface::getCreatedAt));
+                   .max(POLL_COMPARATOR);
     }
 
     @Override

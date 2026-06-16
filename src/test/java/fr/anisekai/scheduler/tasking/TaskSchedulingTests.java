@@ -436,6 +436,25 @@ public class TaskSchedulingTests {
             assertTrue(polled.isEmpty());
         }
 
+        @Test
+        @DisplayName("Polling a task should return the highest priority one")
+        void pollingTaskShouldReturnTheHighestPriorityOne() {
+
+            TaskSchedulingTests.this.createTask(TaskSchedulingTests.this.factoryOne, TaskStatus.SCHEDULED);
+            TaskInterface task = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
+
+            // Force priority
+            task.setPriority(TaskInterface.PRIORITY_AUTOMATIC_HIGH);
+
+            Optional<TestTask> polled = this.orchestrator.poll(Collections.singletonList(TaskSchedulingTests.this.factoryOne));
+
+            assertTrue(polled.isPresent());
+            assertEquals(polled.get(), task);
+        }
+
     }
 
     @Nested

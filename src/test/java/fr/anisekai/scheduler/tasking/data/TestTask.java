@@ -19,7 +19,8 @@ public class TestTask implements TaskInterface {
 
     public TestTask() {
 
-        this.id = UUID.randomUUID();
+        this.id        = UUID.randomUUID();
+        this.createdAt = Instant.now();
     }
 
     public UUID getId() {
