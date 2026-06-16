@@ -8,19 +8,20 @@ import java.util.UUID;
 
 public class TestTask implements TaskInterface {
 
-    private final UUID       id;
-    private       String     factoryName;
-    private       String     name;
-    private       TaskStatus status;
-    private       byte       priority;
-    private       String     arguments;
-    private       byte       failureCount;
-    private       Instant    createdAt;
+    private static final InstantCounter INSTANT_COUNTER = new InstantCounter();
+    private final        UUID           id;
+    private              String         factoryName;
+    private              String         name;
+    private              TaskStatus     status;
+    private              byte           priority;
+    private              String         arguments;
+    private              byte           failureCount;
+    private              Instant        createdAt;
 
     public TestTask() {
 
         this.id        = UUID.randomUUID();
-        this.createdAt = Instant.now();
+        this.createdAt = INSTANT_COUNTER.next();
     }
 
     public UUID getId() {
@@ -119,6 +120,23 @@ public class TestTask implements TaskInterface {
     public void setCreatedAt(Instant createdAt) {
 
         this.createdAt = createdAt;
+    }
+
+    public static final class InstantCounter {
+
+        private Instant instant;
+
+        public InstantCounter() {
+
+            this.instant = Instant.now();
+        }
+
+        public synchronized Instant next() {
+
+            this.instant = this.instant.plusSeconds(1);
+            return this.instant;
+        }
+
     }
 
 }

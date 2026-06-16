@@ -455,6 +455,28 @@ public class TaskSchedulingTests {
             assertEquals(polled.get(), task);
         }
 
+        @Test
+        @DisplayName("Polling tasks with equal priority should return the oldest one")
+        void pollingTasksWithEqualPriorityShouldReturnTheOldestOne() {
+
+            TestTask firstCreated = TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
+
+            TaskSchedulingTests.this.createTask(
+                    TaskSchedulingTests.this.factoryOne,
+                    TaskStatus.SCHEDULED
+            );
+
+            Optional<TestTask> polled = this.orchestrator.poll(
+                    Collections.singletonList(TaskSchedulingTests.this.factoryOne)
+            );
+
+            assertTrue(polled.isPresent());
+            assertEquals(firstCreated, polled.get());
+        }
+
     }
 
     @Nested
