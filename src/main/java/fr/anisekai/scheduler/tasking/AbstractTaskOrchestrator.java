@@ -80,7 +80,7 @@ public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends 
                 if (existing.isPresent()) {
                     E task = existing.get();
                     if (task.getPriority() < priority) {
-                        plan.update(task.getId(), t -> t.setPriority(priority)).build();
+                        plan.update(task.getId(), t -> t.setPriority(priority));
                     }
                     continue;
                 }
