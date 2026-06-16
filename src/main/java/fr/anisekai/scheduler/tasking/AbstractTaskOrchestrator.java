@@ -5,6 +5,7 @@ import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.exceptions.NonExecutingTaskException;
+import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
 import fr.anisekai.scheduler.tasking.interfaces.TaskOrchestrator;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskInterface;
@@ -20,25 +21,26 @@ import java.util.function.Consumer;
  * @param <E>
  *         The type of the task.
  */
-public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends FactoryAware<TaskFactory<?, ?>> implements TaskOrchestrator<E> {
+public abstract class AbstractTaskOrchestrator<E extends TaskInterface> implements TaskOrchestrator<E> {
 
     private static final Comparator<TaskInterface> POLL_COMPARATOR = Comparator
             .comparing(TaskInterface::getPriority)
             .thenComparing(TaskInterface::getCreatedAt, Comparator.reverseOrder());
 
-    private final int maxFailures;
+    private final int                                maxFailures;
+    private final FactoryRegistry<TaskFactory<?, ?>> registry;
 
     /**
      * Create a new {@link AbstractTaskOrchestrator} instance.
      *
-     * @param factories
-     *         A set of {@link TaskFactory} this orchestrator will use.
+     * @param registry
+     *         A {@link FactoryRegistry} implementation allowing to query for factories.
      * @param maxFailures
      *         Maximum amount of failure allowed for a task before switching to the status {@link TaskStatus#FAILED}.
      */
-    public AbstractTaskOrchestrator(@NotNull Set<TaskFactory<?, ?>> factories, int maxFailures) {
+    public AbstractTaskOrchestrator(FactoryRegistry<TaskFactory<?, ?>> registry, int maxFailures) {
 
-        super(factories);
+        this.registry    = registry;
         this.maxFailures = maxFailures;
     }
 
@@ -57,7 +59,7 @@ public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends 
     @Override
     public <F extends TaskFactory<I, ?>, I> @NotNull ActionPlan<UUID, ReservedTaskMeta, E> queue(@NotNull Class<F> factoryClass, @NotNull Collection<I> arguments, byte priority) {
 
-        F factory = this.getFactory(factoryClass);
+        F factory = this.registry.query(factoryClass);
         return this.queue(factory, arguments, priority);
     }
 
@@ -101,7 +103,7 @@ public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends 
             throw new NonExecutingTaskException();
         }
 
-        TaskFactory<?, O> factory = (TaskFactory<?, O>) this.getFactory(task.getFactoryName());
+        TaskFactory<?, O> factory = (TaskFactory<?, O>) this.registry.query(task.getFactoryName());
         O                 results = factory.getResultSerializer().deserialize(data);
         TaskMeta          meta    = TaskMeta.of(task);
 
@@ -125,7 +127,7 @@ public abstract class AbstractTaskOrchestrator<E extends TaskInterface> extends 
             throw new NonExecutingTaskException();
         }
 
-        TaskFactory<?, ?> factory = this.getFactory(task.getFactoryName());
+        TaskFactory<?, ?> factory = this.registry.query(task.getFactoryName());
         TaskMeta          meta    = TaskMeta.of(task);
 
         factory.onFailure(meta, reason);

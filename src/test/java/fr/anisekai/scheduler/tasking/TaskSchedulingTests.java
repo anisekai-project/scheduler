@@ -5,12 +5,14 @@ import fr.anisekai.scheduler.commons.actions.UpdateAction;
 import fr.anisekai.scheduler.commons.interfaces.ObjectSerializer;
 import fr.anisekai.scheduler.tasking.data.ReservedTaskMeta;
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
+import fr.anisekai.scheduler.tasking.data.TestFactoryRegistry;
 import fr.anisekai.scheduler.tasking.data.TestTask;
 import fr.anisekai.scheduler.tasking.data.io.TestInput;
 import fr.anisekai.scheduler.tasking.data.io.TestOutput;
 import fr.anisekai.scheduler.tasking.enums.TaskStatus;
 import fr.anisekai.scheduler.tasking.exceptions.TaskSchedulerException;
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
+import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskExecutor;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactoryClient;
@@ -55,6 +57,9 @@ public class TaskSchedulingTests {
     private              FactoryTwo     factoryTwo;
     private              List<TestTask> tasks;
 
+    private FactoryRegistry<TaskFactoryClient<?, ?>> clientRegistry;
+    private FactoryRegistry<TaskFactory<?, ?>>       serverRegistry;
+
     @BeforeEach
     public void setUp() throws Exception {
 
@@ -63,6 +68,15 @@ public class TaskSchedulingTests {
         // Configure factories
         this.configureFactory(this.factoryOne, "one", TEST_OUTPUT_1_STR);
         this.configureFactory(this.factoryTwo, "two", TEST_OUTPUT_2_STR);
+
+        TestFactoryRegistry clientRegistry = new TestFactoryRegistry();
+        TestFactoryRegistry serverRegistry = new TestFactoryRegistry();
+
+        clientRegistry.apply(this.factoryOne, this.factoryTwo);
+        serverRegistry.apply(this.factoryOne, this.factoryTwo);
+
+        this.clientRegistry = clientRegistry;
+        this.serverRegistry = serverRegistry;
     }
 
     private void configureFactory(TaskFactoryClient<TestInput, TestOutput> factory, String suffix, String output) throws Exception {
@@ -106,19 +120,14 @@ public class TaskSchedulingTests {
 
     @Nested
     @DisplayName("Factory Aware")
-    class FactoryAwareTests {
+    class FactoryRegistryTests {
 
         @Spy
-        private FactoryThree                          factoryThree;
-        private FactoryAware<TaskFactoryClient<?, ?>> factoryAware;
+        private FactoryThree factoryThree;
 
         @BeforeEach
         public void setUp() throws Exception {
 
-            this.factoryAware = new FactoryAware<>(Set.of(
-                    TaskSchedulingTests.this.factoryOne,
-                    TaskSchedulingTests.this.factoryTwo
-            ));
             TaskSchedulingTests.this.configureFactory(this.factoryThree, "three", "");
         }
 
@@ -126,7 +135,8 @@ public class TaskSchedulingTests {
         @DisplayName("Should find factory by class")
         void shouldFindFactoryInstanceByClass() {
 
-            FactoryOne resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(TaskSchedulingTests.this.factoryOne.getClass()));
+            FactoryOne resolved = assertDoesNotThrow(() -> TaskSchedulingTests.this.clientRegistry.query(
+                    TaskSchedulingTests.this.factoryOne.getClass()));
             assertEquals(TaskSchedulingTests.this.factoryOne, resolved);
         }
 
@@ -134,7 +144,8 @@ public class TaskSchedulingTests {
         @DisplayName("Should find factory by name")
         void shouldFindFactoryInstanceByName() {
 
-            TaskFactory<?, ?> resolved = assertDoesNotThrow(() -> this.factoryAware.getFactory(TaskSchedulingTests.this.factoryOne.getName()));
+            TaskFactory<?, ?> resolved = assertDoesNotThrow(() -> TaskSchedulingTests.this.clientRegistry.query(
+                    TaskSchedulingTests.this.factoryOne.getName()));
             assertEquals(TaskSchedulingTests.this.factoryOne, resolved);
         }
 
@@ -144,7 +155,7 @@ public class TaskSchedulingTests {
 
             assertThrows(
                     UnknownFactoryException.class,
-                    () -> this.factoryAware.getFactory(this.factoryThree.getClass())
+                    () -> TaskSchedulingTests.this.clientRegistry.query(this.factoryThree.getClass())
             );
         }
 
@@ -154,7 +165,7 @@ public class TaskSchedulingTests {
 
             assertThrows(
                     UnknownFactoryException.class,
-                    () -> this.factoryAware.getFactory(this.factoryThree.getName())
+                    () -> TaskSchedulingTests.this.clientRegistry.query(this.factoryThree.getName())
             );
         }
 
@@ -175,7 +186,7 @@ public class TaskSchedulingTests {
         public void setUp() {
 
             this.orchestrator = spy(new AbstractTaskOrchestrator<TestTask>(
-                    Set.of(TaskSchedulingTests.this.factoryOne, TaskSchedulingTests.this.factoryTwo),
+                    TaskSchedulingTests.this.serverRegistry,
                     TASK_FAILS_AT
             ) {
                 @Override
@@ -488,10 +499,7 @@ public class TaskSchedulingTests {
         @BeforeEach
         public void setUp() {
 
-            this.client = spy(new AbstractTaskClient(Set.of(
-                    TaskSchedulingTests.this.factoryOne,
-                    TaskSchedulingTests.this.factoryTwo
-            )) {
+            this.client = spy(new AbstractTaskClient(TaskSchedulingTests.this.clientRegistry) {
                 @Override
                 public Optional<TaskMeta> poll() {
 
@@ -542,7 +550,6 @@ public class TaskSchedulingTests {
             lenient().when(this.client.poll()).thenReturn(Optional.empty());
             this.client.tick();
 
-            verify(this.client, never()).getFactory(any(String.class));
             verify(TaskSchedulingTests.this.factoryOne, never()).execute(any());
             verify(this.client, never()).onFailure(any(), any());
             verify(this.client, never()).onSuccess(any(), any());

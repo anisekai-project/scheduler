@@ -1,26 +1,29 @@
 package fr.anisekai.scheduler.tasking;
 
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
+import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
 import fr.anisekai.scheduler.tasking.interfaces.TaskClient;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactoryClient;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Minimal implementation of a task client, providing a sane default behavior for the {@link #tick()} method.
  */
-public abstract class AbstractTaskClient extends FactoryAware<TaskFactoryClient<?, ?>> implements TaskClient {
+public abstract class AbstractTaskClient implements TaskClient {
+
+    private final FactoryRegistry<TaskFactoryClient<?, ?>> registry;
 
     /**
      * Create a new {@link AbstractTaskClient} instance.
      *
-     * @param factories
-     *         Set of factories that this client will support.
+     * @param registry
+     *         A {@link FactoryRegistry} implementation allowing to query for factories.
      */
-    public AbstractTaskClient(Set<TaskFactoryClient<?, ?>> factories) {
+    public AbstractTaskClient(@NotNull FactoryRegistry<TaskFactoryClient<?, ?>> registry) {
 
-        super(factories);
+        this.registry = registry;
     }
 
     @Override
@@ -34,7 +37,7 @@ public abstract class AbstractTaskClient extends FactoryAware<TaskFactoryClient<
 
         TaskMeta task = poll.get();
 
-        TaskFactoryClient<?, ?> factory = this.getFactory(task.factoryName());
+        TaskFactoryClient<?, ?> factory = this.registry.query(task.factoryName());
 
         try {
             String results = factory.execute(task);
