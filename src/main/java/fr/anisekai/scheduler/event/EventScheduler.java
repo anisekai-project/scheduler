@@ -57,6 +57,64 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     }
 
     /**
+     * Check if the two provided {@link ScheduleSpotData} can be merged. This is where the rule of merging should be
+     * decided (timing, content, etc...)
+     *
+     * @param element
+     *         The first {@link ScheduleSpotData}
+     * @param planifiable
+     *         The second {@link ScheduleSpotData}
+     *
+     * @return True if both event can be merged, false otherwise.
+     */
+    private static <T extends WatchTarget> boolean mayMerge(ScheduleSpotData<T> element, ScheduleSpotData<T> planifiable) {
+
+        long breakTime  = Duration.between(element.getEndingAt(), planifiable.getStartingAt()).toSeconds();
+        long magnetTime = MERGE_MAGNET_LIMIT.toSeconds();
+
+        boolean isWithinMagnetTime = breakTime <= magnetTime;
+        boolean isSameGroup        = Objects.equals(element.getWatchTarget(), planifiable.getWatchTarget());
+
+        return isWithinMagnetTime && isSameGroup;
+    }
+
+    /**
+     * Check if provided {@link ScheduleSpotData} overlap one another.
+     *
+     * @param one
+     *         The first {@link ScheduleSpotData}
+     * @param two
+     *         The second {@link ScheduleSpotData}
+     *
+     * @return True if the {@link ScheduleSpotData} overlaps, false otherwise.
+     */
+    private static <T extends WatchTarget> boolean isOverlapping(ScheduleSpotData<T> one, ScheduleSpotData<T> two) {
+
+        return one.getStartingAt().isBefore(two.getEndingAt()) && two.getStartingAt().isBefore(one.getEndingAt());
+    }
+
+    /**
+     * Check if provided {@link ReservedSpot} and {@link ScheduleSpotData} overlap one another.
+     *
+     * @param one
+     *         The {@link ReservedSpot}
+     * @param two
+     *         The {@link ScheduleSpotData}
+     *
+     * @return True if the items overlaps, false otherwise.
+     */
+    private static <T extends WatchTarget> boolean isOverlapping(ReservedSpot<T> one, ScheduleSpotData<T> two) {
+
+        Instant startingAt = one.startingAt();
+        Instant endingAt   = startingAt.plus(one.duration());
+
+        Instant itemStartingAt = two.getStartingAt();
+        Instant itemEndingAt   = itemStartingAt.plus(two.getDuration());
+
+        return startingAt.isBefore(itemEndingAt) && itemStartingAt.isBefore(endingAt);
+    }
+
+    /**
      * Create a {@link Stream} of the current {@link EventScheduler} state, where every item will be filtered based on
      * the return value of {@link ScheduleSpotData#getStartingAt()}. If the returned value is before the provided
      * {@link Instant}, the item will be kept.
@@ -129,17 +187,7 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
             throw new InvalidSchedulingDurationException();
         }
 
-        // Add one second to catch equals case
-        boolean prevOverlap = this.findPrevious(spot.getStartingAt().plusSeconds(1))
-                                  .map(item -> isOverlapping(spot, item))
-                                  .orElse(false);
-
-        // Remove one second to catch equals case
-        boolean nextOverlap = this.findNext(spot.getStartingAt().minusSeconds(1))
-                                  .map(item -> isOverlapping(spot, item))
-                                  .orElse(false);
-
-        return !prevOverlap && !nextOverlap;
+        return this.state.stream().noneMatch(item -> isOverlapping(spot, item));
     }
 
     @Override
@@ -303,72 +351,6 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
         }
 
         return plan.build();
-    }
-
-    /**
-     * Check if the two provided {@link ScheduleSpotData} can be merged. This is where the rule of merging should be
-     * decided (timing, content, etc...)
-     *
-     * @param element
-     *         The first {@link ScheduleSpotData}
-     * @param planifiable
-     *         The second {@link ScheduleSpotData}
-     *
-     * @return True if both event can be merged, false otherwise.
-     */
-    private static <T extends WatchTarget> boolean mayMerge(ScheduleSpotData<T> element, ScheduleSpotData<T> planifiable) {
-
-        long breakTime  = Duration.between(element.getEndingAt(), planifiable.getStartingAt()).toSeconds();
-        long magnetTime = MERGE_MAGNET_LIMIT.toSeconds();
-
-        boolean isWithinMagnetTime = breakTime <= magnetTime;
-        boolean isSameGroup        = Objects.equals(element.getWatchTarget(), planifiable.getWatchTarget());
-
-        return isWithinMagnetTime && isSameGroup;
-    }
-
-    /**
-     * Check if provided {@link ScheduleSpotData} overlap one another.
-     *
-     * @param one
-     *         The first {@link ScheduleSpotData}
-     * @param two
-     *         The second {@link ScheduleSpotData}
-     *
-     * @return True if the {@link ScheduleSpotData} overlaps, false otherwise.
-     */
-    private static <T extends WatchTarget> boolean isOverlapping(ScheduleSpotData<T> one, ScheduleSpotData<T> two) {
-
-        Instant startingAt = one.getStartingAt();
-        Instant endingAt   = startingAt.plus(one.getDuration());
-
-        Instant itemStartingAt = two.getStartingAt();
-        Instant itemEndingAt   = itemStartingAt.plus(two.getDuration());
-
-        return !startingAt.isAfter(itemEndingAt) && !startingAt.equals(itemEndingAt) && !endingAt.isBefore(
-                itemStartingAt) && !endingAt.equals(itemStartingAt);
-    }
-
-    /**
-     * Check if provided {@link ReservedSpot} and {@link ScheduleSpotData} overlap one another.
-     *
-     * @param one
-     *         The {@link ReservedSpot}
-     * @param two
-     *         The {@link ScheduleSpotData}
-     *
-     * @return True if the items overlaps, false otherwise.
-     */
-    private static <T extends WatchTarget> boolean isOverlapping(ReservedSpot<T> one, ScheduleSpotData<T> two) {
-
-        Instant startingAt = one.startingAt();
-        Instant endingAt   = startingAt.plus(one.duration());
-
-        Instant itemStartingAt = two.getStartingAt();
-        Instant itemEndingAt   = itemStartingAt.plus(two.getDuration());
-
-        return !startingAt.isAfter(itemEndingAt) && !startingAt.equals(itemEndingAt) && !endingAt.isBefore(
-                itemStartingAt) && !endingAt.equals(itemStartingAt);
     }
 
 }
