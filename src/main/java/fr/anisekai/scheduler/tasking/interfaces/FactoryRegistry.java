@@ -8,6 +8,9 @@ import java.util.Collection;
 
 /**
  * Contract used by a class capable of referencing a {@link TaskFactory} by its name or class.
+ *
+ * @param <T>
+ *         Common interface shared between all {@link TaskFactory}.
  */
 public interface FactoryRegistry<T extends TaskFactory<?, ?>> {
 

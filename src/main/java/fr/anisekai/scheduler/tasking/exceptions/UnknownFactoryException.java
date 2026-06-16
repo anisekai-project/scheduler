@@ -4,8 +4,7 @@ import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
 import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 
 /**
- * Exception thrown when a {@link fr.anisekai.scheduler.tasking.FactoryAware} was not able to find a requested
- * {@link TaskFactory}. This is also the exception recommended for any implementation of {@link FactoryRegistry}.
+ * Exception thrown when a {@link FactoryRegistry} was not able to find a requested {@link TaskFactory}.
  */
 public class UnknownFactoryException extends TaskSchedulerException {
 
