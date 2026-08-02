@@ -1,9 +1,9 @@
 package fr.anisekai.scheduler.tasking;
 
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
-import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
-import fr.anisekai.scheduler.tasking.interfaces.TaskClient;
-import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactoryClient;
+import fr.anisekai.scheduler.tasking.interfaces.factories.ClientFactory;
+import fr.anisekai.scheduler.tasking.interfaces.factories.FactoryRegistry;
+import fr.anisekai.scheduler.tasking.interfaces.orchestrator.ClientOrchestrator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -11,17 +11,17 @@ import java.util.Optional;
 /**
  * Minimal implementation of a task client, providing a sane default behavior for the {@link #tick()} method.
  */
-public abstract class AbstractTaskClient implements TaskClient {
+public abstract class AbstractClientOrchestrator implements ClientOrchestrator {
 
-    private final FactoryRegistry<TaskFactoryClient<?, ?>> registry;
+    private final FactoryRegistry<ClientFactory<?, ?>> registry;
 
     /**
-     * Create a new {@link AbstractTaskClient} instance.
+     * Create a new {@link AbstractClientOrchestrator} instance.
      *
      * @param registry
      *         A {@link FactoryRegistry} implementation allowing to query for factories.
      */
-    public AbstractTaskClient(@NotNull FactoryRegistry<TaskFactoryClient<?, ?>> registry) {
+    public AbstractClientOrchestrator(@NotNull FactoryRegistry<ClientFactory<?, ?>> registry) {
 
         this.registry = registry;
     }
@@ -37,7 +37,7 @@ public abstract class AbstractTaskClient implements TaskClient {
 
         TaskMeta task = poll.get();
 
-        TaskFactoryClient<?, ?> factory = this.registry.query(task.factoryName());
+        ClientFactory<?, ?> factory = this.registry.query(task.factoryName());
 
         try {
             String results = factory.execute(task);

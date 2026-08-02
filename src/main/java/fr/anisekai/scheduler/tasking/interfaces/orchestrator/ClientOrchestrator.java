@@ -1,4 +1,4 @@
-package fr.anisekai.scheduler.tasking.interfaces;
+package fr.anisekai.scheduler.tasking.interfaces.orchestrator;
 
 import fr.anisekai.scheduler.tasking.data.TaskMeta;
 import org.jetbrains.annotations.NotNull;
@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * Contract used by a class capable of executing tasks.
  */
-public interface TaskClient {
+public interface ClientOrchestrator {
 
     /**
      * Retrieve the next task to execute.

@@ -17,6 +17,8 @@ public class TestTask implements TaskInterface {
     private              String         arguments;
     private              byte           failureCount;
     private              Instant        createdAt;
+    private              Instant        startedAt;
+    private              Instant        completedAt;
 
     public TestTask() {
 
@@ -101,14 +103,26 @@ public class TestTask implements TaskInterface {
         this.failureCount = failureCount;
     }
 
+    public Instant getStartedAt() {
+
+        return this.startedAt;
+    }
+
     @Override
     public void setStartedAt(Instant startedAt) {
 
+        this.startedAt = startedAt;
+    }
+
+    public Instant getCompletedAt() {
+
+        return this.completedAt;
     }
 
     @Override
     public void setCompletedAt(Instant completedAt) {
 
+        this.completedAt = completedAt;
     }
 
     @Override

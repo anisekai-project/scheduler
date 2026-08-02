@@ -1,8 +1,8 @@
 package fr.anisekai.scheduler.tasking.data;
 
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
-import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
-import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.factories.Factory;
+import fr.anisekai.scheduler.tasking.interfaces.factories.FactoryRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestFactoryRegistry<T extends TaskFactory<?, ?>> implements FactoryRegistry<T> {
+public class TestFactoryRegistry<T extends Factory<?, ?>> implements FactoryRegistry<T> {
 
     private final Map<Class<?>, T> factories = new HashMap<>();
 

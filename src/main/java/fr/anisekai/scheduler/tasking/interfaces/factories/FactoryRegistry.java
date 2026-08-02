@@ -1,18 +1,17 @@
-package fr.anisekai.scheduler.tasking.interfaces;
+package fr.anisekai.scheduler.tasking.interfaces.factories;
 
 import fr.anisekai.scheduler.tasking.exceptions.UnknownFactoryException;
-import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
 /**
- * Contract used by a class capable of referencing a {@link TaskFactory} by its name or class.
+ * Contract used by a class capable of referencing a {@link Factory} by its name or class.
  *
  * @param <T>
- *         Common interface shared between all {@link TaskFactory}.
+ *         Common interface shared between all {@link Factory}.
  */
-public interface FactoryRegistry<T extends TaskFactory<?, ?>> {
+public interface FactoryRegistry<T extends Factory<?, ?>> {
 
     /**
      * Retrieve a specific factory from this factory registry object.
@@ -20,7 +19,7 @@ public interface FactoryRegistry<T extends TaskFactory<?, ?>> {
      * @param name
      *         The factory name
      *
-     * @return The {@link TaskFactory} instance.
+     * @return The {@link Factory} instance.
      *
      * @throws UnknownFactoryException
      *         if the factory class did not match any registered factories.
@@ -35,7 +34,7 @@ public interface FactoryRegistry<T extends TaskFactory<?, ?>> {
      * @param <F>
      *         The factory type.
      *
-     * @return The {@link TaskFactory} instance.
+     * @return The {@link Factory} instance.
      *
      * @throws UnknownFactoryException
      *         if the factory class did not match any registered factories.
@@ -46,7 +45,7 @@ public interface FactoryRegistry<T extends TaskFactory<?, ?>> {
      * Retrieve all factories registered in this factory registry object. It is recommended to return an unmodifiable
      * collection to avoid any issues.
      *
-     * @return A {@link Collection} of {@link TaskFactory}.
+     * @return A {@link Collection} of {@link Factory}.
      */
     Collection<T> getFactories();
 

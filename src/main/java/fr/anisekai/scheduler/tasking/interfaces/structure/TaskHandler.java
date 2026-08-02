@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  *         Output type.
  */
 @FunctionalInterface
-public interface TaskExecutor<I, O> {
+public interface TaskHandler<I, O> {
 
     /**
      * Executes the business logic of the task.
@@ -24,6 +24,6 @@ public interface TaskExecutor<I, O> {
      * @throws Exception
      *         if execution fails.
      */
-    @NotNull O execute(@NotNull I arguments) throws Exception;
+    @NotNull O handle(@NotNull I arguments) throws Exception;
 
 }

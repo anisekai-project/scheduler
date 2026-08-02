@@ -1,10 +1,10 @@
 package fr.anisekai.scheduler.tasking.exceptions;
 
-import fr.anisekai.scheduler.tasking.interfaces.FactoryRegistry;
-import fr.anisekai.scheduler.tasking.interfaces.structure.TaskFactory;
+import fr.anisekai.scheduler.tasking.interfaces.factories.Factory;
+import fr.anisekai.scheduler.tasking.interfaces.factories.FactoryRegistry;
 
 /**
- * Exception thrown when a {@link FactoryRegistry} was not able to find a requested {@link TaskFactory}.
+ * Exception thrown when a {@link FactoryRegistry} was not able to find a requested {@link Factory}.
  */
 public class UnknownFactoryException extends TaskSchedulerException {
 
@@ -14,7 +14,7 @@ public class UnknownFactoryException extends TaskSchedulerException {
      * @param factory
      *         The factory class that was requested.
      */
-    public UnknownFactoryException(Class<? extends TaskFactory<?, ?>> factory) {
+    public UnknownFactoryException(Class<? extends Factory<?, ?>> factory) {
 
         super(String.format(
                 "Unknown factory %s. Perhaps you forgot to call `registerFactory` ?",

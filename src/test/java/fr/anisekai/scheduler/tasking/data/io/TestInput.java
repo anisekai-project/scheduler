@@ -22,4 +22,15 @@ public record TestInput(String example) {
         }
     };
 
+    public TestOutput toOutput() {
+
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = this.example().length() - 1; i >= 0; i--) {
+            builder.append(this.example.charAt(i));
+        }
+
+        return new TestOutput(builder.toString());
+    }
+
 }
