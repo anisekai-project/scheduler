@@ -257,6 +257,13 @@ public class EventScheduler<T extends WatchTarget, E extends Planifiable<T>, ID 
     @Override
     public @NotNull ActionPlan<ID, ReservedSpot<T>, E> delay(@NotNull Instant from, @NotNull Duration interval, @NotNull Duration delay) {
 
+        if (interval.isZero() || interval.isNegative()) {
+            throw new InvalidSchedulingDurationException("The selection interval must be positive.");
+        }
+        if (delay.isZero()) {
+            throw new InvalidSchedulingDurationException("The delay must be non-zero.");
+        }
+
         Instant to = from.plus(interval);
 
         List<E> events = this.getState()

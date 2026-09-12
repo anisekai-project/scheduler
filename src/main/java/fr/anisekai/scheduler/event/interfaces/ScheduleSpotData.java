@@ -1,5 +1,6 @@
 package fr.anisekai.scheduler.event.interfaces;
 
+import fr.anisekai.scheduler.event.ScheduleDuration;
 import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
 import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
 import org.jetbrains.annotations.NotNull;
@@ -111,12 +112,7 @@ public interface ScheduleSpotData<T extends WatchTarget> {
      */
     default @NotNull Duration getDuration() {
 
-        if (this.getEpisodeCount() == 1) return Duration.ofMinutes(this.getWatchTarget().getEpisodeDuration());
-
-        int totalRuntime       = this.getWatchTarget().getEpisodeDuration() * this.getEpisodeCount();
-        int superfluousRuntime = this.isSkipEnabled() ? (this.getEpisodeCount() - 1) * 3 : 0;
-
-        return Duration.ofMinutes(totalRuntime - superfluousRuntime);
+        return ScheduleDuration.calculate(this.getWatchTarget(), this.getEpisodeCount(), this.isSkipEnabled());
     }
 
 }

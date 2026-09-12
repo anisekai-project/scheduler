@@ -17,4 +17,15 @@ public class InvalidSchedulingDurationException extends EventSchedulerException 
         super("Unable to schedule an event with an invalid duration.");
     }
 
+    /**
+     * Constructs a new exception with a precise validation message.
+     *
+     * @param message
+     *         Description of the invalid temporal input.
+     */
+    public InvalidSchedulingDurationException(String message) {
+
+        super(message);
+    }
+
 }

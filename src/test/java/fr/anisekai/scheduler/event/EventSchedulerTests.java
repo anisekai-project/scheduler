@@ -327,6 +327,53 @@ public class EventSchedulerTests {
     class EventDelaying {
 
         @Test
+        @DisplayName("Should reject zero and negative selection intervals")
+        public void shouldRejectInvalidIntervals() {
+
+            assertThrows(
+                    InvalidSchedulingDurationException.class,
+                    () -> EventSchedulerTests.this.scheduler.delay(TestData.BASE_DATETIME, Duration.ZERO, Duration.ofMinutes(1))
+            );
+            assertThrows(
+                    InvalidSchedulingDurationException.class,
+                    () -> EventSchedulerTests.this.scheduler.delay(TestData.BASE_DATETIME, Duration.ofMinutes(-1), Duration.ofMinutes(1))
+            );
+        }
+
+        @Test
+        @DisplayName("Should reject a zero delay")
+        public void shouldRejectZeroDelay() {
+
+            assertThrows(
+                    InvalidSchedulingDurationException.class,
+                    () -> EventSchedulerTests.this.scheduler.delay(TestData.BASE_DATETIME, Duration.ofMinutes(1), Duration.ZERO)
+            );
+        }
+
+        @Test
+        @DisplayName("Should allow moving events earlier")
+        public void shouldAllowNegativeDelay() {
+
+            Duration delay = Duration.ofMinutes(-1);
+            var plan = assertDoesNotThrow(() -> EventSchedulerTests.this.scheduler.delay(
+                    TestData.BASE_DATETIME,
+                    Duration.ofMinutes(60),
+                    delay
+            ));
+
+            var update = assertSingleUpdateAction(plan);
+            TestWatchParty party = new TestWatchParty(
+                    EventSchedulerTests.this.data.target1,
+                    EventSchedulerTests.this.data.partyA1.getStartingAt(),
+                    0,
+                    0
+            );
+            update.hook().accept(party);
+
+            assertEquals(EventSchedulerTests.this.data.partyA1.getStartingAt().plus(delay), party.getStartingAt());
+        }
+
+        @Test
         @DisplayName("When no overlaps, should not conflict")
         public void testWhenNoOverlapsShouldNotConflict() {
 
