@@ -55,18 +55,22 @@ public abstract class AbstractServerOrchestrator<E extends TaskInterface> implem
                                                             .map(Factory::getName)
                                                             .toList();
 
-        Optional<E> optionalTask = this.getTasks()
-                                       .stream()
-                                       .filter(task -> task.getStatus() == TaskStatus.SCHEDULED)
-                                       .filter(task -> supportedFactoryNames.contains(task.getFactoryName()))
-                                       .max(POLL_COMPARATOR);
+        List<E> candidates = this.getTasks()
+                                 .stream()
+                                 .filter(task -> task.getStatus() == TaskStatus.SCHEDULED)
+                                 .filter(task -> supportedFactoryNames.contains(task.getFactoryName()))
+                                 .sorted(POLL_COMPARATOR.reversed())
+                                 .toList();
 
-        optionalTask.ifPresent(task -> {
+        for (E task : candidates) {
+            if (!this.claim(task, client)) continue;
+
             ServerFactory<E, ?, ?> factory = this.registry.query(task.getFactoryName());
             factory.onAssigningTask(new TaskExecutionPacket<>(task));
-        });
+            return Optional.of(task);
+        }
 
-        return optionalTask;
+        return Optional.empty();
     }
 
     @Override
