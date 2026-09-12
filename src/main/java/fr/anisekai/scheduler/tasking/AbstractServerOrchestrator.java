@@ -81,24 +81,28 @@ public abstract class AbstractServerOrchestrator<E extends TaskInterface> implem
 
         List<E>                                       tasks = this.getTasks();
         ActionPlan.Builder<UUID, ReservedTaskMeta, E> plan  = new ActionPlan.Builder<>();
+        Map<String, E>                                existingTasks = new HashMap<>();
+        Set<String>                                   queuedNames   = new HashSet<>();
+        Set<String>                                   updatedNames  = new HashSet<>();
+        boolean                                       allowDuplicated = factory.allowDuplicated();
+
+        if (!allowDuplicated) {
+            tasks.stream()
+                 .filter(task -> task.getStatus() == TaskStatus.SCHEDULED)
+                 .filter(task -> task.getFactoryName().equals(factory.getName()))
+                 .forEach(task -> existingTasks.putIfAbsent(task.getName(), task));
+            queuedNames.addAll(existingTasks.keySet());
+        }
 
         for (I argument : arguments) {
             String name = factory.getTaskName(argument);
 
-            if (!factory.allowDuplicated()) {
-                Optional<E> existing = tasks
-                        .stream()
-                        .filter(t -> t.getStatus() == TaskStatus.SCHEDULED)
-                        .filter(t -> t.getName().equals(name) && t.getFactoryName().equals(factory.getName()))
-                        .findFirst();
-
-                if (existing.isPresent()) {
-                    E task = existing.get();
-                    if (task.getPriority() < priority) {
-                        plan.update(task.getId(), t -> t.setPriority(priority));
-                    }
-                    continue;
+            if (!allowDuplicated && !queuedNames.add(name)) {
+                E task = existingTasks.get(name);
+                if (task != null && task.getPriority() < priority && updatedNames.add(name)) {
+                    plan.update(task.getId(), t -> t.setPriority(priority));
                 }
+                continue;
             }
 
             String rawArguments = factory.getArgumentsSerializer().serialize(argument);

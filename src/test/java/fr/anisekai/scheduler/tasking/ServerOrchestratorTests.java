@@ -267,6 +267,37 @@ public class ServerOrchestratorTests {
         }
 
         @Test
+        @DisplayName("Should create one task for duplicate arguments in the same batch")
+        public void shouldDeduplicateArgumentsWithinBatch() {
+
+            TestInput argument = new TestInput("test");
+            Orchestrator orchestrator = ServerOrchestratorTests.this.createOrchestrator();
+
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(
+                    CustomServerFactory.class,
+                    List.of(argument, argument)
+            );
+
+            assertPlanActions(plan, 1, 0, 0);
+        }
+
+        @Test
+        @DisplayName("Should preserve duplicate arguments when the factory allows duplicates")
+        public void shouldPreserveBatchDuplicatesWhenAllowed() {
+
+            doReturn(true).when(ServerOrchestratorTests.this.factory).allowDuplicated();
+            TestInput argument = new TestInput("test");
+            Orchestrator orchestrator = ServerOrchestratorTests.this.createOrchestrator();
+
+            ActionPlan<UUID, ReservedTaskMeta, TestTask> plan = orchestrator.queue(
+                    CustomServerFactory.class,
+                    List.of(argument, argument)
+            );
+
+            assertPlanActions(plan, 2, 0, 0);
+        }
+
+        @Test
         @DisplayName("Should update task priority when lower & duplicated")
         public void shouldUpdateTaskPriorityWhenLowerAndDuplicated() {
 
