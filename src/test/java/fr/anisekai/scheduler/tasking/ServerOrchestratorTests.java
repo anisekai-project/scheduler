@@ -23,8 +23,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Stream;
 
 import static fr.anisekai.scheduler.ActionPlanAssertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -109,6 +115,15 @@ public class ServerOrchestratorTests {
         public Orchestrator(FactoryRegistry<ServerFactory<TestTask, ?, ?>> registry, int maxFailures) {
 
             super(registry, maxFailures);
+        }
+
+        @Override
+        public synchronized boolean claim(@NotNull TestTask task, @NotNull TaskClient client) {
+
+            if (task.getStatus() != TaskStatus.SCHEDULED) return false;
+            task.setStatus(TaskStatus.EXECUTING);
+            task.setStartedAt(Instant.now());
+            return true;
         }
 
     }
@@ -367,8 +382,52 @@ public class ServerOrchestratorTests {
 
             assertTrue(polled.isPresent());
             assertEquals(task, polled.get());
+            assertEquals(TaskStatus.EXECUTING, task.getStatus());
+            assertNotNull(task.getStartedAt());
 
             verify(ServerOrchestratorTests.this.factory).onAssigningTask(argThat(packet -> packet.task() == task));
+        }
+
+        @Test
+        @DisplayName("Should allow only one concurrent client to claim a task")
+        public void shouldClaimTaskAtomically() throws Exception {
+
+            TestTask task = ServerOrchestratorTests.this.createTask(
+                    ServerOrchestratorTests.this.factory,
+                    TaskStatus.SCHEDULED,
+                    new TestInput("test"),
+                    TaskInterface.PRIORITY_URGENT
+            );
+            Orchestrator orchestrator = ServerOrchestratorTests.this.createOrchestrator(task);
+            TaskClient secondClient = mock(TaskClient.class);
+            doReturn(this.client.getSupportedFactories()).when(secondClient).getSupportedFactories();
+
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch start = new CountDownLatch(1);
+
+            try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+                Future<Optional<TestTask>> first = executor.submit(() -> pollConcurrently(orchestrator, this.client, ready, start));
+                Future<Optional<TestTask>> second = executor.submit(() -> pollConcurrently(orchestrator, secondClient, ready, start));
+
+                ready.await();
+                start.countDown();
+
+                long claims = Stream.of(first.get(), second.get()).filter(Optional::isPresent).count();
+                assertEquals(1, claims);
+                assertEquals(TaskStatus.EXECUTING, task.getStatus());
+            }
+        }
+
+        private Optional<TestTask> pollConcurrently(
+                Orchestrator orchestrator,
+                TaskClient client,
+                CountDownLatch ready,
+                CountDownLatch start
+        ) throws InterruptedException {
+
+            ready.countDown();
+            start.await();
+            return orchestrator.poll(client);
         }
 
         @Test

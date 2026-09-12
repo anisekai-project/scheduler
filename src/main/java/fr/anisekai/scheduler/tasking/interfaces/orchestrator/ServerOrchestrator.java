@@ -41,6 +41,23 @@ public interface ServerOrchestrator<E extends TaskInterface> {
     Optional<E> poll(@NotNull TaskClient client);
 
     /**
+     * Atomically claim a scheduled task for a client.
+     * <p>
+     * Implementations must transition the task from {@link TaskStatus#SCHEDULED} to
+     * {@link TaskStatus#EXECUTING} as one atomic persistence operation. They should also set the task start time and may record
+     * the client assignment in their own persistence model. The method must return {@code false} when the task is no longer
+     * scheduled, including when another client claimed it concurrently.
+     *
+     * @param task
+     *         The candidate task selected for execution.
+     * @param client
+     *         The client attempting to claim the task.
+     *
+     * @return {@code true} when this client claimed the task, otherwise {@code false}.
+     */
+    boolean claim(@NotNull E task, @NotNull TaskClient client);
+
+    /**
      * Queue one or more tasks from the provided factory.
      *
      * @param factoryClass
