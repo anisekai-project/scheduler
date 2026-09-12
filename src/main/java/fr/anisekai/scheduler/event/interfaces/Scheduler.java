@@ -115,9 +115,10 @@ public interface Scheduler<T extends WatchTarget, E extends Planifiable<T>, ID e
      * @param from
      *         {@link Instant} defining the start of the interval
      * @param interval
-     *         {@link Duration} defining the length of the interval
+     *         Positive {@link Duration} defining the length of the interval.
      * @param delay
-     *         {@link Duration} defining the length of the delay to apply to every matching {@link Planifiable}.
+     *         Non-zero {@link Duration} defining the shift to apply to every matching {@link Planifiable}. A negative
+     *         value moves matching events earlier.
      *
      * @return A scheduling plan containing the update operations.
      */

@@ -1,5 +1,6 @@
 package fr.anisekai.scheduler.event.data;
 
+import fr.anisekai.scheduler.event.ScheduleDuration;
 import fr.anisekai.scheduler.event.interfaces.ScheduleSpotData;
 import fr.anisekai.scheduler.event.interfaces.entities.Planifiable;
 import fr.anisekai.scheduler.event.interfaces.entities.WatchTarget;
@@ -100,12 +101,7 @@ public record ReservedSpot<T extends WatchTarget>(
      */
     public @NotNull Duration duration() {
 
-        if (this.episodeCount() == 1) return Duration.ofMinutes(this.watchTarget().getEpisodeDuration());
-
-        int totalRuntime       = this.watchTarget().getEpisodeDuration() * this.episodeCount();
-        int superfluousRuntime = this.skipEnabled() ? (this.episodeCount() - 1) * 3 : 0;
-
-        return Duration.ofMinutes(totalRuntime - superfluousRuntime);
+        return ScheduleDuration.calculate(this.watchTarget(), this.episodeCount(), this.skipEnabled());
     }
 
 }

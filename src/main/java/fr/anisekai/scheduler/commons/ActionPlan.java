@@ -5,7 +5,6 @@ import fr.anisekai.scheduler.commons.actions.DeleteAction;
 import fr.anisekai.scheduler.commons.actions.UpdateAction;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -32,6 +31,16 @@ public record ActionPlan<ID, E, T>(
         List<UpdateAction<ID, T>> updates,
         List<DeleteAction<ID>> deletes
 ) {
+
+    /**
+     * Create an immutable snapshot of the supplied action lists.
+     */
+    public ActionPlan {
+
+        creates = List.copyOf(creates);
+        updates = List.copyOf(updates);
+        deletes = List.copyOf(deletes);
+    }
 
     /**
      * Builder class allowing to easily construct an {@link ActionPlan}.
@@ -113,11 +122,7 @@ public record ActionPlan<ID, E, T>(
          */
         public ActionPlan<ID, E, T> build() {
 
-            return new ActionPlan<>(
-                    Collections.unmodifiableList(this.createActions),
-                    Collections.unmodifiableList(this.updateActions),
-                    Collections.unmodifiableList(this.deleteActions)
-            );
+            return new ActionPlan<>(this.createActions, this.updateActions, this.deleteActions);
         }
 
     }
